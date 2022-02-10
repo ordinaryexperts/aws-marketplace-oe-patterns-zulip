@@ -5,6 +5,9 @@ with open("README.md") as fp:
     long_description = fp.read()
 
 
+# this is also set in setup-env.sh
+CDK_VERSION="1.144.0"
+
 setuptools.setup(
     name="zulip",
     version="0.0.1",
@@ -19,7 +22,8 @@ setuptools.setup(
     packages=setuptools.find_packages(where="zulip"),
 
     install_requires=[
-        "aws-cdk.core==1.33.0",
+        f"aws-cdk.core=={CDK_VERSION}",
+        f"oe-patterns-cdk-common@git+https://github.com/ordinaryexperts/aws-marketplace-oe-patterns-cdk-common@2.0.2"
     ],
 
     python_requires=">=3.6",
