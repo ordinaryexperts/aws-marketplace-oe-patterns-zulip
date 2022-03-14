@@ -1,4 +1,5 @@
 FROM ordinaryexperts/aws-marketplace-patterns-devenv:feature-more-scripts
+# FROM devenv:latest
 
 # install dependencies
 RUN mkdir -p /tmp/code/cdk/zulip

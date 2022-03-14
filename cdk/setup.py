@@ -6,7 +6,7 @@ with open("README.md") as fp:
 
 
 # this is also set in setup-env.sh
-CDK_VERSION="1.144.0"
+CDK_VERSION="1.148.0"
 
 setuptools.setup(
     name="zulip",
