@@ -41,6 +41,10 @@ cd -
 apt-get -y install collectd
 
 # TODO zulip setup
+# Download & unpack Zulip files
+cd $(mktemp -d)
+wget https://download.zulip.com/server/zulip-server-latest.tar.gz
+tar -xf zulip-server-latest.tar.gz
 
 # AMI hardening
 
