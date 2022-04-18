@@ -4,7 +4,6 @@ import setuptools
 with open("README.md") as fp:
     long_description = fp.read()
 
-
 # this is also set in setup-env.sh
 CDK_VERSION="1.148.0"
 
@@ -26,8 +25,9 @@ setuptools.setup(
         f"aws-cdk.aws-ec2=={CDK_VERSION}",
         f"aws-cdk.aws-elasticloadbalancingv2=={CDK_VERSION}",
         f"aws-cdk.aws-iam=={CDK_VERSION}",
+        f"aws-cdk.aws-logs=={CDK_VERSION}",
         f"aws-cdk.core=={CDK_VERSION}",
-        f"oe-patterns-cdk-common@git+https://github.com/ordinaryexperts/aws-marketplace-oe-patterns-cdk-common@2.0.2"
+        f"oe-patterns-cdk-common@git+https://github.com/ordinaryexperts/aws-marketplace-oe-patterns-cdk-common@2.1.0"
     ],
 
     python_requires=">=3.6",

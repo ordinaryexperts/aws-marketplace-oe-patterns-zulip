@@ -6,6 +6,7 @@ update-common:
 deploy: build
 	docker-compose run -w /code/cdk --rm devenv cdk deploy \
 	--require-approval never \
+	--parameters CertificateArn=arn:aws:acm:us-east-1:992593896645:certificate/943928d7-bfce-469c-b1bf-11561024580e \
 	--parameters VpcId=vpc-00425deda4c835455 \
 	--parameters VpcPrivateSubnet1Id=subnet-030c94b9795c6cb96 \
 	--parameters VpcPrivateSubnet2Id=subnet-079290412ce63c4d5 \
