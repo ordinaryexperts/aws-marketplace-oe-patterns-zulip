@@ -131,6 +131,17 @@ class ZulipStack(Stack):
             ip_protocol="tcp",
             to_port=443
         )
+        sg_https_ingress = aws_ec2.CfnSecurityGroupIngress(
+            self,
+            "AppSgHttpsIngress",
+            description="Allow HTTPS traffic from Alb to App",
+            from_port=443,
+            group_id=asg.sg.ref,
+            ip_protocol="tcp",
+            source_security_group_id=alb_sg.ref,
+            to_port=443
+        )
+
         alb = aws_elasticloadbalancingv2.CfnLoadBalancer(
             self,
             "AppAlb",
