@@ -200,6 +200,7 @@ class ZulipStack(Stack):
             target_type="instance",
             vpc_id=vpc.id()
         )
+        asg.asg.target_group_arns = [ https_target_group.ref ]
         https_listener = aws_elasticloadbalancingv2.CfnListener(
             self,
             "HttpsListener",
