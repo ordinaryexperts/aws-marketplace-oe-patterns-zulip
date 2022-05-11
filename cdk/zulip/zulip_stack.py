@@ -3,11 +3,17 @@ from aws_cdk import (
     aws_elasticloadbalancingv2,
     aws_iam,
     aws_logs,
-    core
+    Aws,
+    CfnDeletionPolicy,
+    CfnMapping,
+    CfnParameter,
+    Stack,
+    Tags
 )
+from constructs import Construct
 
 from oe_patterns_cdk_common.asg import Asg
-from oe_patterns_cdk_common.util import Util
+# from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 TWO_YEARS_IN_DAYS=731
@@ -22,9 +28,9 @@ generated_ami_ids = {
 }
 # End generated code block.
 
-class ZulipStack(core.Stack):
+class ZulipStack(Stack):
 
-    def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
         # vpc
@@ -39,15 +45,15 @@ class ZulipStack(core.Stack):
             "JitsiAppLogGroup",
             retention_in_days=TWO_YEARS_IN_DAYS
         )
-        app_log_group.cfn_options.update_replace_policy = core.CfnDeletionPolicy.RETAIN
-        app_log_group.cfn_options.deletion_policy = core.CfnDeletionPolicy.RETAIN
+        app_log_group.cfn_options.update_replace_policy = CfnDeletionPolicy.RETAIN
+        app_log_group.cfn_options.deletion_policy = CfnDeletionPolicy.RETAIN
         system_log_group = aws_logs.CfnLogGroup(
             self,
             "JitsiSystemLogGroup",
             retention_in_days=TWO_YEARS_IN_DAYS
         )
-        system_log_group.cfn_options.update_replace_policy = core.CfnDeletionPolicy.RETAIN
-        system_log_group.cfn_options.deletion_policy = core.CfnDeletionPolicy.RETAIN
+        system_log_group.cfn_options.update_replace_policy = CfnDeletionPolicy.RETAIN
+        system_log_group.cfn_options.deletion_policy = CfnDeletionPolicy.RETAIN
 
         # asg
         with open("zulip/launch_config_user_data.sh") as f:
@@ -73,7 +79,7 @@ class ZulipStack(core.Stack):
         }
         for region in generated_ami_ids.keys():
             ami_mapping[region] = { "AMI": generated_ami_ids[region] }
-        aws_ami_region_map = core.CfnMapping(
+        aws_ami_region_map = CfnMapping(
             self,
             "AWSAMIRegionMap",
             mapping=ami_mapping
@@ -84,13 +90,13 @@ class ZulipStack(core.Stack):
         # PARAMETERS
         #
 
-        certificate_arn_param = core.CfnParameter(
+        certificate_arn_param = CfnParameter(
             self,
             "CertificateArn",
             default="",
             description="Optional: Specify the ARN of a ACM Certificate to configure HTTPS."
         )
-        alb_ingress_cidr_param = core.CfnParameter(
+        alb_ingress_cidr_param = CfnParameter(
             self,
             "AlbIngressCidr",
             allowed_pattern="^((\d{1,3})\.){3}\d{1,3}/\d{1,2}$",
@@ -101,10 +107,10 @@ class ZulipStack(core.Stack):
         alb_sg = aws_ec2.CfnSecurityGroup(
             self,
             "AlbSg",
-            group_description="{}/AlbSg".format(core.Aws.STACK_NAME),
+            group_description="{}/AlbSg".format(Aws.STACK_NAME),
             vpc_id=vpc.id()
         )
-        core.Tags.of(alb_sg).add("Name", "{}/AlbSg".format(core.Aws.STACK_NAME))
+        Tags.of(alb_sg).add("Name", "{}/AlbSg".format(Aws.STACK_NAME))
         alb_http_ingress = aws_ec2.CfnSecurityGroupIngress(
             self,
             "AlbSgHttpIngress",

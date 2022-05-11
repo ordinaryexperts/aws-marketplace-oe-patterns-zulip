@@ -1,4 +1,4 @@
-FROM ordinaryexperts/aws-marketplace-patterns-devenv:feature-more-scripts
+FROM ordinaryexperts/aws-marketplace-patterns-devenv:feature-cdk2
 # FROM devenv:latest
 
 # install dependencies
