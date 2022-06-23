@@ -22,7 +22,7 @@ setuptools.setup(
     install_requires=[
         f"aws-cdk-lib=={CDK_VERSION}",
         f"constructs>=10.0.0,<11.0.0",
-        f"oe-patterns-cdk-common@git+https://github.com/ordinaryexperts/aws-marketplace-oe-patterns-cdk-common@c572af3ec4c8fe4b67b2241ff527ae753a6c84ed"
+        f"oe-patterns-cdk-common@git+https://github.com/ordinaryexperts/aws-marketplace-oe-patterns-cdk-common@a15e82d479b0f802e13e4a0740679659fe048e80"
     ],
 
     python_requires=">=3.6",
