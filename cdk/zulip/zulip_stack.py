@@ -19,6 +19,7 @@ from constructs import Construct
 
 from oe_patterns_cdk_common.alb import Alb
 from oe_patterns_cdk_common.asg import Asg
+from oe_patterns_cdk_common.dns import Dns
 from oe_patterns_cdk_common.vpc import Vpc
 
 TWO_YEARS_IN_DAYS=731
@@ -86,50 +87,4 @@ class ZulipStack(Stack):
         alb = Alb(self, "Alb", asg=asg, vpc=vpc)
         asg.asg.target_group_arns = [ alb.https_target_group.ref ]
 
-        route_53_hosted_zone_name_param = CfnParameter(
-            self,
-            "Route53HostedZoneName",
-            default="",
-            description="Optional: Route 53 Hosted Zone name in which a DNS record will be created by this template. Must already exist and be the domain part of the Hostname parameter, without trailing dot. E.G. 'internal.mycompany.com'"
-        )
-        hostname_param = CfnParameter(
-            self,
-            "Hostname",
-            allowed_pattern="^(?!.*\/).*$",
-            constraint_description="Hostname should not have any forward slashes",
-            default="",
-            description="Optional: The hostname to access the service. E.G. 'app.internal.mycompany.com'"
-        )
-        route_53_hosted_zone_name_exists_condition = CfnCondition(
-            self,
-            "Route53HostedZoneNameExists",
-            expression=Fn.condition_not(Fn.condition_equals(route_53_hosted_zone_name_param.value, ""))
-        )
-        hostname_exists_condition = CfnCondition(
-            self,
-            "HostnameExists",
-            expression=Fn.condition_not(Fn.condition_equals(hostname_param.value, ""))
-        )
-        # route 53
-        record_set = aws_route53.CfnRecordSet(
-            self,
-            "RecordSet",
-            hosted_zone_name=f"{route_53_hosted_zone_name_param.value_as_string}.",
-            name=hostname_param.value_as_string,
-            resource_records=[ alb.alb.attr_dns_name ],
-            type="CNAME"
-        )
-        # https://github.com/aws/aws-cdk/issues/8431
-        record_set.add_property_override("TTL", 60)
-        record_set.cfn_options.condition = route_53_hosted_zone_name_exists_condition
-        site_url_output = CfnOutput(
-            self,
-            "SiteUrlOutput",
-            description="The URL Endpoint",
-            value=Token.as_string(
-                Fn.condition_if(
-                hostname_exists_condition.logical_id,
-                "https://{}".format(hostname_param.value_as_string),
-                "https://{}".format(alb.alb.attr_dns_name)
-            ))
-        )
+        dns = Dns(self, "Dns", alb=alb)
