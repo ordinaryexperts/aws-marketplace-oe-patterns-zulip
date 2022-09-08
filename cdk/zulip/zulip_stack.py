@@ -56,13 +56,34 @@ class ZulipStack(Stack):
             self,
             "Asg",
             allow_associate_address = True,
+            data_volume_size = 100,
             default_instance_type = "t3.xlarge",
+            singleton = True, # implied by data_volume_size > 0
             user_data_contents=launch_config_user_data,
             user_data_variables = {},
             vpc=vpc
         )
 
         alb = Alb(self, "Alb", asg=asg, vpc=vpc)
-        asg.asg.target_group_arns = [ alb.https_target_group.ref ]
+        asg.asg.target_group_arns = [ alb.target_group.ref ]
 
         dns = Dns(self, "Dns", alb=alb)
+
+        parameter_groups = alb.metadata_parameter_group()
+        parameter_groups += dns.metadata_parameter_group()
+        parameter_groups += asg.metadata_parameter_group()
+        parameter_groups += vpc.metadata_parameter_group()
+
+        # AWS::CloudFormation::Interface
+        self.template_options.metadata = {
+            "OE::Patterns::TemplateVersion": template_version,
+            "AWS::CloudFormation::Interface": {
+                "ParameterGroups": parameter_groups,
+                "ParameterLabels": {
+                    **alb.metadata_parameter_labels(),
+                    **dns.metadata_parameter_labels(),
+                    **asg.metadata_parameter_labels(),
+                    **vpc.metadata_parameter_labels()
+                }
+            }
+        }
