@@ -12,6 +12,9 @@ apt-get -y update && apt-get -y upgrade
 # install helpful utilities
 apt-get -y install curl git jq ntp software-properties-common unzip vim wget zip
 
+# xfs
+apt-get -y install xfsprogs
+
 # install latest CFN utilities
 apt-get -y install python3-pip
 ln -s /usr/bin/pip3 /usr/bin/pip
