@@ -3,7 +3,7 @@ import setuptools
 with open("README.md") as fp:
     long_description = fp.read()
 
-CDK_VERSION="2.20.0"
+CDK_VERSION="2.44.0"
 
 setuptools.setup(
     name="zulip",
@@ -21,7 +21,7 @@ setuptools.setup(
     install_requires=[
         f"aws-cdk-lib=={CDK_VERSION}",
         f"constructs>=10.0.0,<11.0.0",
-        f"oe-patterns-cdk-common@git+https://github.com/ordinaryexperts/aws-marketplace-oe-patterns-cdk-common@3.2.0"
+        f"oe-patterns-cdk-common@git+https://github.com/ordinaryexperts/aws-marketplace-oe-patterns-cdk-common@03383da35acefd30297d18be80e9a04fc65b4b1d"
     ],
 
     python_requires=">=3.6",

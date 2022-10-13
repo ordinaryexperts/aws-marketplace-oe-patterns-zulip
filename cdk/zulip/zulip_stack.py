@@ -21,7 +21,10 @@ from constructs import Construct
 
 from oe_patterns_cdk_common.alb import Alb
 from oe_patterns_cdk_common.asg import Asg
+from oe_patterns_cdk_common.aurora_cluster import AuroraPostgresql
+from oe_patterns_cdk_common.db_secret import DbSecret
 from oe_patterns_cdk_common.dns import Dns
+from oe_patterns_cdk_common.elasticache_cluster import ElasticacheRedis
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
@@ -58,6 +61,26 @@ class ZulipStack(Stack):
         # vpc
         vpc = Vpc(self, "Vpc")
 
+        # db_secret
+        db_secret = DbSecret(
+            self,
+            "DbSecret"
+        )
+
+        db = AuroraPostgresql(
+            self,
+            "Db",
+            db_secret=db_secret,
+            vpc=vpc
+        )
+
+        # redis
+        redis = ElasticacheRedis(
+            self,
+            "Redis",
+            vpc=vpc
+        )
+
         # asg
         with open("zulip/launch_config_user_data.sh") as f:
             launch_config_user_data = f.read()
@@ -67,10 +90,24 @@ class ZulipStack(Stack):
             allow_associate_address = True,
             data_volume_size = 100,
             default_instance_type = "t3.xlarge",
+            secret_arns=[db_secret.secret_arn()],
             singleton = True, # implied by data_volume_size > 0
             user_data_contents=launch_config_user_data,
             user_data_variables = {},
             vpc=vpc
+        )
+        asg.asg.node.add_dependency(db.db_primary_instance)
+        db.add_asg_ingress(asg)
+
+        redis_ingress = aws_ec2.CfnSecurityGroupIngress(
+            self,
+            "RedisSgIngress",
+            source_security_group_id=asg.sg.ref,
+            description="Allow traffic from ASG to Redis",
+            from_port=redis.port,
+            group_id=redis.elasticache_sg.ref,
+            ip_protocol="tcp",
+            to_port=redis.port
         )
 
         alb = Alb(self, "Alb", asg=asg, vpc=vpc)
