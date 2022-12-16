@@ -43,12 +43,12 @@ cd -
 # collectd for metrics
 apt-get -y install collectd
 
-# TODO zulip setup
 # Download & unpack Zulip files
 mkdir -p /root/zulipfiles
 cd /root/zulipfiles
-wget https://github.com/zulip/zulip/releases/download/5.1/zulip-server-5.1.tar.gz
-tar -xf zulip-server-5.1.tar.gz
+wget https://github.com/zulip/zulip/releases/download/5.6/zulip-server-5.6.tar.gz
+tar -xf zulip-server-5.6.tar.gz
+PUPPET_CLASSES=zulip::profile::app_frontend ./zulip-server-5.6/scripts/setup/install --self-signed-cert --no-init-db
 
 # AMI hardening
 
