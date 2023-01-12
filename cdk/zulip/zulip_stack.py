@@ -1,6 +1,7 @@
 import os
 import subprocess
 from aws_cdk import (
+    Aws,
     CfnMapping,
     Stack
 )
@@ -67,12 +68,14 @@ class ZulipStack(Stack):
         # db_secret
         db_secret = DbSecret(
             self,
-            "DbSecret"
+            "DbSecret",
+            username = "zulip"
         )
 
         db = AuroraPostgresql(
             self,
             "Db",
+            database_name="zulip",
             db_secret=db_secret,
             vpc=vpc
         )
@@ -94,7 +97,13 @@ class ZulipStack(Stack):
             default_instance_type = "t3.xlarge",
             secret_arns=[db_secret.secret_arn()],
             user_data_contents=launch_config_user_data,
-            user_data_variables = {},
+            user_data_variables = {
+                "AssetsBucketName": bucket.bucket_name(),
+                "DbSecretArn": db_secret.secret_arn(),
+                "Hostname": dns.hostname(),
+                "HostedZoneName": dns.route_53_hosted_zone_name_param.value_as_string,
+                "InstanceSecretName": Aws.STACK_NAME + "/instance/credentials"
+            },
             vpc=vpc
         )
         asg.asg.node.add_dependency(db.db_primary_instance)
