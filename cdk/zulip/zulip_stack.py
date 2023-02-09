@@ -84,6 +84,7 @@ class ZulipStack(Stack):
         redis = ElasticacheRedis(
             self,
             "Redis",
+            transit_encryption_enabled = False,
             vpc=vpc
         )
 
