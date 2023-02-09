@@ -1,56 +1,8 @@
-#!/bin/bash -eux
-
-# wait for cloud-init to be done
-if [ ! "$IN_DOCKER" = true ]; then
-    cloud-init status --wait
-fi
-
-# apt upgrade
-export DEBIAN_FRONTEND=noninteractive
-apt-get -y update && apt-get -y upgrade
-
-# install helpful utilities
-apt-get -y install curl git jq ntp software-properties-common unzip vim wget zip
-
-# xfs
-apt-get -y install xfsprogs
-
-# install latest CFN utilities
-apt-get -y install python3-pip
-ln -s /usr/bin/pip3 /usr/bin/pip
-pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
-
-# install aws cli
-cd /tmp
-curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
-unzip awscliv2.zip
-./aws/install
-cd -
-
-# install SSM Agent
-# https://docs.aws.amazon.com/systems-manager/latest/userguide/agent-install-deb.html
-mkdir /tmp/ssm
-cd /tmp/ssm
-wget https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/debian_amd64/amazon-ssm-agent.deb
-dpkg -i -E ./amazon-ssm-agent.deb
-systemctl enable amazon-ssm-agent
-
-# install CloudWatch agent
-cd /tmp
-curl https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -o amazon-cloudwatch-agent.deb
-dpkg -i -E ./amazon-cloudwatch-agent.deb
-cd -
-# collectd for metrics
-apt-get -y install collectd
-
-# Download & unpack Zulip files
-mkdir -p /root/zulipfiles
-cd /root/zulipfiles
-wget https://github.com/zulip/zulip/releases/download/5.6/zulip-server-5.6.tar.gz
-tar -xf zulip-server-5.6.tar.gz
-PUPPET_CLASSES=zulip::profile::app_frontend ./zulip-server-5.6/scripts/setup/install --self-signed-cert --no-init-db
-
+#
 # AMI hardening
+#
+
+# TODO failtoban
 
 # Update the AMI tools before using them
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/building-shared-amis.html#public-amis-update-ami-tools
@@ -105,11 +57,6 @@ shred -u /etc/ssh/*_key /etc/ssh/*_key.pub
 # AWS Marketplace Security Checklist
 # https://docs.aws.amazon.com/marketplace/latest/userguide/product-and-ami-policies.html#security
 sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
-
-# remove python2.7
-apt-get -y remove --purge python2.7
-apt-get -y autoremove
-ln -s /usr/bin/python3 /usr/bin/python
 
 # apt cleanup
 apt-get -y autoremove

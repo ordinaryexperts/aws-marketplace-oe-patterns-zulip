@@ -17,6 +17,10 @@ aws ssm get-parameter \
 DB_PASSWORD=$(cat /opt/oe/patterns/secret.json | jq -r .password)
 DB_USERNAME=$(cat /opt/oe/patterns/secret.json | jq -r .username)
 
+# drop RDS pem cert onto instance
+mkdir -p /home/zulip/.postgresql
+wget -O /home/zulip/.postgresql/root.crt https://truststore.pki.rds.amazonaws.com/${AWS::Region}/${AWS::Region}-bundle.pem
+
 echo 'test'
 success=$?
 cfn-signal --exit-code $success --stack ${AWS::StackName} --resource Asg --region ${AWS::Region}

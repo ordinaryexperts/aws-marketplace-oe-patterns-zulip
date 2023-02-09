@@ -19,10 +19,10 @@ from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
-AMI_ID="ami-05b6754dd2fc08437"
-AMI_NAME="ordinary-experts-patterns-zulip-alpha-20221110-0848"
+AMI_ID="ami-040d56cdcbb1fd908"
+AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230209-0647"
 generated_ami_ids = {
-    "us-east-1": "ami-05b6754dd2fc08437"
+    "us-east-1": "ami-040d56cdcbb1fd908"
 }
 # End generated code block.
 
