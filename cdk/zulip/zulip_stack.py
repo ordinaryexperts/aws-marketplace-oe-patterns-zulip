@@ -84,20 +84,19 @@ class ZulipStack(Stack):
         redis = ElasticacheRedis(
             self,
             "Redis",
-            transit_encryption_enabled = False,
             vpc=vpc
         )
 
         # asg
-        with open("zulip/launch_config_user_data.sh") as f:
-            launch_config_user_data = f.read()
+        with open("zulip/user_data.sh") as f:
+            user_data = f.read()
         asg = Asg(
             self,
             "Asg",
             allow_associate_address = True,
             default_instance_type = "t3.xlarge",
             secret_arns=[db_secret.secret_arn()],
-            user_data_contents=launch_config_user_data,
+            user_data_contents=user_data,
             user_data_variables = {
                 "AssetsBucketName": bucket.bucket_name(),
                 "DbSecretArn": db_secret.secret_arn(),

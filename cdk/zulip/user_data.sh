@@ -1,0 +1,254 @@
+#!/bin/bash
+
+# aws cloudwatch
+cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+{
+  "agent": {
+    "metrics_collection_interval": 60,
+    "run_as_user": "root",
+    "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log"
+  },
+  "metrics": {
+    "metrics_collected": {
+      "collectd": {
+        "metrics_aggregation_interval": 60
+      },
+      "disk": {
+        "measurement": ["used_percent"],
+        "metrics_collection_interval": 60,
+        "resources": ["*"]
+      },
+      "mem": {
+        "measurement": ["mem_used_percent"],
+        "metrics_collection_interval": 60
+      }
+    },
+    "append_dimensions": {
+      "ImageId": "\${!aws:ImageId}",
+      "InstanceId": "\${!aws:InstanceId}",
+      "InstanceType": "\${!aws:InstanceType}",
+      "AutoScalingGroupName": "\${!aws:AutoScalingGroupName}"
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/dpkg.log",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/dpkg.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/apt/history.log",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/apt/history.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/cloud-init.log",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/cloud-init.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/cloud-init-output.log",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/cloud-init-output.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/auth.log",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/auth.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/syslog",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/syslog",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/amazon/ssm/amazon-ssm-agent.log",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/amazon/ssm/amazon-ssm-agent.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/amazon/ssm/errors.log",
+            "log_group_name": "${AsgSystemLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/amazon/ssm/errors.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/nginx/access.log",
+            "log_group_name": "${AsgAppLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/nginx/access.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/nginx/error.log",
+            "log_group_name": "${AsgAppLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/nginx/error.log",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/zulip/server.log",
+            "log_group_name": "${AsgAppLogGroup}",
+            "log_stream_name": "{instance_id}-/var/log/zulip/server.log",
+            "timezone": "UTC"
+          }
+        ]
+      }
+    },
+    "log_stream_name": "{instance_id}"
+  }
+}
+EOF
+systemctl enable amazon-cloudwatch-agent
+systemctl start amazon-cloudwatch-agent
+
+mkdir -p /opt/oe/patterns
+
+# secretsmanager
+SECRET_ARN="${DbSecretArn}"
+echo $SECRET_ARN > /opt/oe/patterns/secret-arn.txt
+SECRET_NAME=$(aws secretsmanager list-secrets --query "SecretList[?ARN=='$SECRET_ARN'].Name" --output text)
+echo $SECRET_NAME > /opt/oe/patterns/secret-name.txt
+
+aws ssm get-parameter \
+    --name "/aws/reference/secretsmanager/$SECRET_NAME" \
+    --with-decryption \
+    --query Parameter.Value \
+| jq -r . > /opt/oe/patterns/secret.json
+
+DB_PASSWORD=$(cat /opt/oe/patterns/secret.json | jq -r .password)
+DB_USERNAME=$(cat /opt/oe/patterns/secret.json | jq -r .username)
+
+# drop RDS pem cert onto instance
+mkdir -p /home/zulip/.postgresql
+wget -O /home/zulip/.postgresql/root.crt https://truststore.pki.rds.amazonaws.com/${AWS::Region}/${AWS::Region}-bundle.pem
+
+# /root/check-secrets.py ${AWS::Region} ${InstanceSecretName}
+
+# aws ssm get-parameter \
+#     --name "/aws/reference/secretsmanager/${InstanceSecretName}" \
+#     --with-decryption \
+#     --query Parameter.Value \
+# | jq -r . > /opt/oe/patterns/instance.json
+
+# ACCESS_KEY_ID=$(cat /opt/oe/patterns/instance.json | jq -r .access_key_id)
+# OTP_SECRET=$(cat /opt/oe/patterns/instance.json | jq -r .otp_secret)
+# SECRET_ACCESS_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .secret_access_key)
+# SECRET_KEY_BASE=$(cat /opt/oe/patterns/instance.json | jq -r .secret_key_base)
+# SMTP_PASSWORD=$(cat /opt/oe/patterns/instance.json | jq -r .smtp_password)
+# VAPID_PRIVATE_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .vapid_private_key)
+# VAPID_PUBLIC_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .vapid_public_key)
+
+cat <<EOF > /etc/zulip/zulip.conf
+[machine]
+puppet_classes = zulip::profile::app_frontend
+deploy_type = production
+
+[postgresql]
+missing_dictionaries = true
+EOF
+
+cp /etc/zulip/settings.py /etc/zulip/settings.py.orig
+cat <<EOF > /etc/zulip/settings.py
+from typing import Any, Dict, Tuple
+
+from .config import get_secret
+
+ZULIP_ADMINISTRATOR = "zulip@${HostedZoneName}"
+EXTERNAL_HOST = "${Hostname}"
+
+EMAIL_HOST = "email-smtp.${AWS::Region}.amazonaws.com"
+EMAIL_HOST_USER = "$ACCESS_KEY_ID"
+
+EMAIL_GATEWAY_PATTERN = ""
+EMAIL_GATEWAY_LOGIN = ""
+EMAIL_GATEWAY_IMAP_SERVER = ""
+EMAIL_GATEWAY_IMAP_PORT = 993
+EMAIL_GATEWAY_IMAP_FOLDER = "INBOX"
+
+AUTHENTICATION_BACKENDS: Tuple[str, ...] = (
+    "zproject.backends.EmailAuthBackend",  # Email and password; just requires SMTP setup
+)
+
+REMOTE_POSTGRES_HOST = "${DbCluster.Endpoint.Address}"
+
+RABBITMQ_HOST = "127.0.0.1"
+## To use another RabbitMQ user than the default "zulip", set RABBITMQ_USERNAME here.
+# RABBITMQ_USERNAME = "zulip"
+
+REDIS_HOST = "${RedisCluster.RedisEndpoint.Address}"
+
+MEMCACHED_LOCATION = "127.0.0.1:11211"
+## To authenticate to memcached, set memcached_password in zulip-secrets.conf,
+## and optionally change the default username "zulip@localhost" here.
+# MEMCACHED_USERNAME = "zulip@localhost"
+
+## Controls whether session cookies expire when the browser closes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+## Session cookie expiry in seconds after the last page load
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 2  # 2 weeks
+
+## Controls whether or not Zulip will parse links starting with
+## "file:///" as a hyperlink (useful if you have e.g. an NFS share).
+ENABLE_FILE_LINKS = False
+
+## By default, files uploaded by users and profile pictures are stored
+## directly on the Zulip server.  You can configure files being instead
+## stored in Amazon S3 or another scalable data store here.  See docs at:
+##
+##   https://zulip.readthedocs.io/en/latest/production/upload-backends.html
+##
+## If you change LOCAL_UPLOADS_DIR to a different path, you will also
+## need to manually edit Zulip's nginx configuration to use the new
+## path.  For that reason, we recommend replacing /home/zulip/uploads
+## with a symlink instead of changing LOCAL_UPLOADS_DIR.
+LOCAL_UPLOADS_DIR = "/home/zulip/uploads"
+# S3_AUTH_UPLOADS_BUCKET = ""
+# S3_AVATAR_BUCKET = ""
+# S3_REGION = None
+# S3_ENDPOINT_URL = None
+# S3_SKIP_PROXY = True
+
+MAX_FILE_UPLOAD_SIZE = 25
+NAME_CHANGES_DISABLED = False
+AVATAR_CHANGES_DISABLED = False
+ENABLE_GRAVATAR = True
+
+## The default CAMO_URI of "/external_content/" is served by the camo
+## setup in the default Zulip nginx configuration.  Setting CAMO_URI
+## to "" will disable the Camo integration.
+CAMO_URI = "/external_content/"
+EOF
+
+cat <<EOF > /etc/zulip/zulip-secrets.conf
+[secrets]
+avatar_salt = TODO
+rabbitmq_password = TODO
+shared_secret = TODO
+secret_key = TODO
+camo_key = TODO
+memcached_password = TODO
+# redis_password = ""
+zulip_org_key = TODO
+zulip_org_id = TODO
+postgres_password = $DB_PASSWORD
+EOF
+
+su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'
+success=$?
+cfn-signal --exit-code $success --stack ${AWS::StackName} --resource Asg --region ${AWS::Region}
