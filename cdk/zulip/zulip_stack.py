@@ -3,6 +3,7 @@ import subprocess
 from aws_cdk import (
     Aws,
     CfnMapping,
+    Fn,
     Stack
 )
 from constructs import Construct
@@ -19,10 +20,10 @@ from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
-AMI_ID="ami-040d56cdcbb1fd908"
-AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230209-0647"
+AMI_ID="ami-0dc830c006f17672f"
+AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230414-0518"
 generated_ami_ids = {
-    "us-east-1": "ami-040d56cdcbb1fd908"
+    "us-east-1": "ami-0dc830c006f17672f"
 }
 # End generated code block.
 
@@ -94,8 +95,8 @@ class ZulipStack(Stack):
             self,
             "Asg",
             allow_associate_address = True,
-            default_instance_type = "t3.xlarge",
-            secret_arns=[db_secret.secret_arn()],
+            secret_arns=[db_secret.secret_arn(), ses.secret_arn()],
+            use_graviton = False,
             user_data_contents=user_data,
             user_data_variables = {
                 "AssetsBucketName": bucket.bucket_name(),

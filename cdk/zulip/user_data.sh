@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo 'hi'
+success=$?
+cfn-signal --exit-code $success --stack ${AWS::StackName} --resource Asg --region ${AWS::Region}
+
 # aws cloudwatch
 cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 {
@@ -188,7 +192,7 @@ REMOTE_POSTGRES_HOST = "${DbCluster.Endpoint.Address}"
 
 RABBITMQ_HOST = "127.0.0.1"
 ## To use another RabbitMQ user than the default "zulip", set RABBITMQ_USERNAME here.
-# RABBITMQ_USERNAME = "zulip"
+RABBITMQ_USERNAME = "zulip"
 
 REDIS_HOST = "${RedisCluster.RedisEndpoint.Address}"
 
@@ -238,7 +242,7 @@ EOF
 cat <<EOF > /etc/zulip/zulip-secrets.conf
 [secrets]
 avatar_salt = TODO
-rabbitmq_password = TODO
+# rabbitmq_password = ""
 shared_secret = TODO
 secret_key = TODO
 camo_key = TODO
@@ -250,5 +254,3 @@ postgres_password = $DB_PASSWORD
 EOF
 
 su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'
-success=$?
-cfn-signal --exit-code $success --stack ${AWS::StackName} --resource Asg --region ${AWS::Region}
