@@ -6,7 +6,7 @@ update-common:
 deploy: build
 	docker-compose run -w /code/cdk --rm devenv cdk deploy \
 	--require-approval never \
-	--parameters AlbCertificateArn=arn:aws:acm:us-east-1:992593896645:certificate/943928d7-bfce-469c-b1bf-11561024580e \
+	--parameters AlbCertificateArn=arn:aws:acm:us-east-1:992593896645:certificate/40c05ec8-16d6-4fe2-8cbc-aecd7ae281b1 \
 	--parameters AlbIngressCidr=0.0.0.0/0 \
 	--parameters AsgReprovisionString=20230315.1 \
 	--parameters AsgInstanceType=m5.large \

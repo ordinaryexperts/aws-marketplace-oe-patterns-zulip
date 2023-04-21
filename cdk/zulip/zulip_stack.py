@@ -9,21 +9,23 @@ from aws_cdk import (
 from constructs import Construct
 
 from oe_patterns_cdk_common.alb import Alb
+from oe_patterns_cdk_common.amazonmq import RabbitMQ
 from oe_patterns_cdk_common.asg import Asg
 from oe_patterns_cdk_common.assets_bucket import AssetsBucket
 from oe_patterns_cdk_common.aurora_cluster import AuroraPostgresql
 from oe_patterns_cdk_common.db_secret import DbSecret
 from oe_patterns_cdk_common.dns import Dns
 from oe_patterns_cdk_common.elasticache_cluster import ElasticacheRedis
+from oe_patterns_cdk_common.secret import Secret
 from oe_patterns_cdk_common.ses import Ses
 from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
-AMI_ID="ami-0dc830c006f17672f"
-AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230414-0518"
+AMI_ID="ami-07d812de4741c7f7a"
+AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230420-1039"
 generated_ami_ids = {
-    "us-east-1": "ami-0dc830c006f17672f"
+    "us-east-1": "ami-07d812de4741c7f7a"
 }
 # End generated code block.
 
@@ -81,12 +83,16 @@ class ZulipStack(Stack):
             vpc=vpc
         )
 
-        # redis
+        # REDIS
         redis = ElasticacheRedis(
             self,
             "Redis",
             vpc=vpc
         )
+
+        # RabbitMQ
+        secret = Secret(self, "RabbitMQSecret")
+        rabbitmq = RabbitMQ(self, "RabbitMQ", secret=secret, vpc=vpc)
 
         # asg
         with open("zulip/user_data.sh") as f:
@@ -95,12 +101,13 @@ class ZulipStack(Stack):
             self,
             "Asg",
             allow_associate_address = True,
-            secret_arns=[db_secret.secret_arn(), ses.secret_arn()],
+            secret_arns=[db_secret.secret_arn(), ses.secret_arn(), secret.secret_arn()],
             use_graviton = False,
             user_data_contents=user_data,
             user_data_variables = {
                 "AssetsBucketName": bucket.bucket_name(),
                 "DbSecretArn": db_secret.secret_arn(),
+                "RabbitMQSecretArn": secret.secret_arn(),
                 "Hostname": dns.hostname(),
                 "HostedZoneName": dns.route_53_hosted_zone_name_param.value_as_string,
                 "InstanceSecretName": Aws.STACK_NAME + "/instance/credentials"
@@ -108,15 +115,21 @@ class ZulipStack(Stack):
             vpc=vpc
         )
         asg.asg.node.add_dependency(db.db_primary_instance)
+        asg.asg.node.add_dependency(rabbitmq.broker)
+        asg.asg.node.add_dependency(redis.elasticache_cluster)
         asg.asg.node.add_dependency(ses.generate_smtp_password_custom_resource)
 
-        redis_ingress = Util.add_sg_ingress(redis, asg.sg)
-        db_ingress    = Util.add_sg_ingress(db, asg.sg)
+        db_ingress       = Util.add_sg_ingress(db, asg.sg)
+        rabbitmq_ingress = Util.add_sg_ingress(rabbitmq, asg.sg)
+        redis_ingress    = Util.add_sg_ingress(redis, asg.sg)
 
         alb = Alb(self, "Alb", asg=asg, vpc=vpc)
         asg.asg.target_group_arns = [ alb.target_group.ref ]
 
         dns.add_alb(alb)
+
+        # all subdomains should point to the main domain
+        # TODO
 
         parameter_groups = alb.metadata_parameter_group()
         parameter_groups += dns.metadata_parameter_group()

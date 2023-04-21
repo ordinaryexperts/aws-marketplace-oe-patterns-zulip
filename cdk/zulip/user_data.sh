@@ -137,6 +137,21 @@ aws ssm get-parameter \
 DB_PASSWORD=$(cat /opt/oe/patterns/secret.json | jq -r .password)
 DB_USERNAME=$(cat /opt/oe/patterns/secret.json | jq -r .username)
 
+RABBITMQ_SECRET_ARN="${RabbitMQSecretArn}"
+echo $RABBITMQ_SECRET_ARN > /opt/oe/patterns/rabbitmq-secret-arn.txt
+RABBITMQ_SECRET_NAME=$(aws secretsmanager list-secrets --query "SecretList[?ARN=='$RABBITMQ_SECRET_ARN'].Name" --output text)
+echo $RABBITMQ_SECRET_NAME > /opt/oe/patterns/rabbitmq-secret-name.txt
+
+aws ssm get-parameter \
+    --name "/aws/reference/secretsmanager/$RABBITMQ_SECRET_NAME" \
+    --with-decryption \
+    --query Parameter.Value \
+| jq -r . > /opt/oe/patterns/rabbitmq_secret.json
+
+RABBITMQ_PASSWORD=$(cat /opt/oe/patterns/rabbitmq_secret.json | jq -r .password)
+RABBITMQ_USERNAME=$(cat /opt/oe/patterns/rabbitmq_secret.json | jq -r .username)
+RABBITMQ_ID=$(echo "${RabbitMQBroker.Arn}" | awk -F: '{print $NF}')
+
 # drop RDS pem cert onto instance
 mkdir -p /home/zulip/.postgresql
 wget -O /home/zulip/.postgresql/root.crt https://truststore.pki.rds.amazonaws.com/${AWS::Region}/${AWS::Region}-bundle.pem
@@ -190,9 +205,11 @@ AUTHENTICATION_BACKENDS: Tuple[str, ...] = (
 
 REMOTE_POSTGRES_HOST = "${DbCluster.Endpoint.Address}"
 
-RABBITMQ_HOST = "127.0.0.1"
+RABBITMQ_HOST = "$RABBITMQ_ID.mq.${AWS::Region}.amazonaws.com"
+RABBITMQ_PORT = 5671
+RABBITMQ_USE_TLS = True
 ## To use another RabbitMQ user than the default "zulip", set RABBITMQ_USERNAME here.
-RABBITMQ_USERNAME = "zulip"
+RABBITMQ_USERNAME = "$RABBITMQ_USERNAME"
 
 REDIS_HOST = "${RedisCluster.RedisEndpoint.Address}"
 
@@ -242,15 +259,21 @@ EOF
 cat <<EOF > /etc/zulip/zulip-secrets.conf
 [secrets]
 avatar_salt = TODO
-# rabbitmq_password = ""
+rabbitmq_password = $RABBITMQ_PASSWORD
 shared_secret = TODO
 secret_key = TODO
 camo_key = TODO
-memcached_password = TODO
+# memcached_password = ""
 # redis_password = ""
 zulip_org_key = TODO
 zulip_org_id = TODO
 postgres_password = $DB_PASSWORD
 EOF
+
+echo "${DbCluster.Endpoint.Address}:5432:zulip:zulip:$DB_PASSWORD" > /root/.pgpass
+chmod 600 /root/.pgpass
+psql -U zulip -h ${DbCluster.Endpoint.Address} -d zulip -c "ALTER ROLE zulip SET search_path TO zulip,public"
+psql -U zulip -h ${DbCluster.Endpoint.Address} -d zulip -c "CREATE SCHEMA IF NOT EXISTS zulip AUTHORIZATION zulip"
+rm /root/.pgpass
 
 su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'

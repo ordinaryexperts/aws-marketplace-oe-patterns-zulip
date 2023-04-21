@@ -3,7 +3,7 @@
 #
 
 # Dependencies
-apt-get update && apt-get install -y gettext
+apt-get update && apt-get install -y gettext memcached
 
 # Download & unpack Zulip files
 
