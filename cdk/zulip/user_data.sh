@@ -158,19 +158,15 @@ wget -O /home/zulip/.postgresql/root.crt https://truststore.pki.rds.amazonaws.co
 
 # /root/check-secrets.py ${AWS::Region} ${InstanceSecretName}
 
-# aws ssm get-parameter \
-#     --name "/aws/reference/secretsmanager/${InstanceSecretName}" \
-#     --with-decryption \
-#     --query Parameter.Value \
-# | jq -r . > /opt/oe/patterns/instance.json
+aws ssm get-parameter \
+    --name "/aws/reference/secretsmanager/${InstanceSecretName}" \
+    --with-decryption \
+    --query Parameter.Value \
+| jq -r . > /opt/oe/patterns/instance.json
 
-# ACCESS_KEY_ID=$(cat /opt/oe/patterns/instance.json | jq -r .access_key_id)
-# OTP_SECRET=$(cat /opt/oe/patterns/instance.json | jq -r .otp_secret)
-# SECRET_ACCESS_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .secret_access_key)
-# SECRET_KEY_BASE=$(cat /opt/oe/patterns/instance.json | jq -r .secret_key_base)
-# SMTP_PASSWORD=$(cat /opt/oe/patterns/instance.json | jq -r .smtp_password)
-# VAPID_PRIVATE_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .vapid_private_key)
-# VAPID_PUBLIC_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .vapid_public_key)
+ACCESS_KEY_ID=$(cat /opt/oe/patterns/instance.json | jq -r .access_key_id)
+SECRET_ACCESS_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .secret_access_key)
+SMTP_PASSWORD=$(cat /opt/oe/patterns/instance.json | jq -r .smtp_password)
 
 cat <<EOF > /etc/zulip/zulip.conf
 [machine]
@@ -189,9 +185,12 @@ from .config import get_secret
 
 ZULIP_ADMINISTRATOR = "zulip@${HostedZoneName}"
 EXTERNAL_HOST = "${Hostname}"
+ALLOWED_HOSTS = ["*"]
 
 EMAIL_HOST = "email-smtp.${AWS::Region}.amazonaws.com"
 EMAIL_HOST_USER = "$ACCESS_KEY_ID"
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
 
 EMAIL_GATEWAY_PATTERN = ""
 EMAIL_GATEWAY_LOGIN = ""
@@ -260,6 +259,7 @@ cat <<EOF > /etc/zulip/zulip-secrets.conf
 [secrets]
 avatar_salt = TODO
 rabbitmq_password = $RABBITMQ_PASSWORD
+email_password = $SMTP_PASSWORD
 shared_secret = TODO
 secret_key = TODO
 camo_key = TODO
