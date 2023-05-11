@@ -270,6 +270,9 @@ zulip_org_id = TODO
 postgres_password = $DB_PASSWORD
 EOF
 
+sed -i "/ssl_certificate_key/a\    location /elb-check { access_log off; return 200 'ok'; add_header Content-Type text/plain; }" /etc/nginx/sites-available/zulip-enterprise
+service nginx restart
+
 echo "${DbCluster.Endpoint.Address}:5432:zulip:zulip:$DB_PASSWORD" > /root/.pgpass
 chmod 600 /root/.pgpass
 psql -U zulip -h ${DbCluster.Endpoint.Address} -d zulip -c "ALTER ROLE zulip SET search_path TO zulip,public"

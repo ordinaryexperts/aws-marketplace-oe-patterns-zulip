@@ -123,7 +123,13 @@ class ZulipStack(Stack):
         rabbitmq_ingress = Util.add_sg_ingress(rabbitmq, asg.sg)
         redis_ingress    = Util.add_sg_ingress(redis, asg.sg)
 
-        alb = Alb(self, "Alb", asg=asg, vpc=vpc)
+        alb = Alb(
+            self,
+            "Alb",
+            asg=asg,
+            health_check_path = "/elb-check",
+            vpc=vpc
+        )
         asg.asg.target_group_arns = [ alb.target_group.ref ]
 
         dns.add_alb(alb)
