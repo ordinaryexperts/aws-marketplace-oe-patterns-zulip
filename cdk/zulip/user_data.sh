@@ -1,9 +1,5 @@
 #!/bin/bash
 
-echo 'hi'
-success=$?
-cfn-signal --exit-code $success --stack ${AWS::StackName} --resource Asg --region ${AWS::Region}
-
 # aws cloudwatch
 cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 {
@@ -255,23 +251,35 @@ ENABLE_GRAVATAR = True
 CAMO_URI = "/external_content/"
 EOF
 
+/root/check-secrets.py ${AWS::Region} ${InstanceSecretName} false
+
+aws ssm get-parameter \
+    --name "/aws/reference/secretsmanager/${InstanceSecretName}" \
+    --with-decryption \
+    --query Parameter.Value \
+| jq -r . > /opt/oe/patterns/instance.json
+
+AVATAR_SALT=$(cat /opt/oe/patterns/instance.json | jq -r .avatar_salt)
+CAMO_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .camo_key)
+SECRET_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .secret_key)
+SHARED_SECRET=$(cat /opt/oe/patterns/instance.json | jq -r .shared_secret)
+ZULIP_ORG_ID=$(cat /opt/oe/patterns/instance.json | jq -r .zulip_org_id)
+ZULIP_ORG_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .zulip_org_key)
+
 cat <<EOF > /etc/zulip/zulip-secrets.conf
 [secrets]
-avatar_salt = TODO
+avatar_salt = $AVATAR_SALT
 rabbitmq_password = $RABBITMQ_PASSWORD
 email_password = $SMTP_PASSWORD
-shared_secret = TODO
-secret_key = TODO
-camo_key = TODO
+shared_secret = $SHARED_SECRET
+secret_key = $SECRET_KEY
+camo_key = $CAMO_KEY
 # memcached_password = ""
 # redis_password = ""
-zulip_org_key = TODO
-zulip_org_id = TODO
+zulip_org_key = $ZULIP_ORG_KEY
+zulip_org_id = $ZULIP_ORG_ID
 postgres_password = $DB_PASSWORD
 EOF
-
-sed -i "/ssl_certificate_key/a\    location /elb-check { access_log off; return 200 'ok'; add_header Content-Type text/plain; }" /etc/nginx/sites-available/zulip-enterprise
-service nginx restart
 
 echo "${DbCluster.Endpoint.Address}:5432:zulip:zulip:$DB_PASSWORD" > /root/.pgpass
 chmod 600 /root/.pgpass
@@ -280,3 +288,12 @@ psql -U zulip -h ${DbCluster.Endpoint.Address} -d zulip -c "CREATE SCHEMA IF NOT
 rm /root/.pgpass
 
 su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'
+
+# run again after db initialized to get initial realm link
+/root/check-secrets.py ${AWS::Region} ${InstanceSecretName} true
+
+sed -i "/ssl_certificate_key/a\    location /elb-check { access_log off; return 200 'ok'; add_header Content-Type text/plain; }" /etc/nginx/sites-available/zulip-enterprise
+service nginx restart
+
+success=$?
+cfn-signal --exit-code $success --stack ${AWS::StackName} --resource Asg --region ${AWS::Region}

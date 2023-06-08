@@ -1,8 +1,11 @@
 import os
 import subprocess
 from aws_cdk import (
+    aws_iam,
+    aws_route53,
     Aws,
     CfnMapping,
+    CfnOutput,
     Fn,
     Stack
 )
@@ -22,10 +25,10 @@ from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
-AMI_ID="ami-0d1b64a70e903a941"
-AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230511-0622"
+AMI_ID="ami-02adec983f22e30c4"
+AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230608-0750"
 generated_ami_ids = {
-    "us-east-1": "ami-0d1b64a70e903a941"
+    "us-east-1": "ami-02adec983f22e30c4"
 }
 # End generated code block.
 
@@ -94,12 +97,30 @@ class ZulipStack(Stack):
         secret = Secret(self, "RabbitMQSecret")
         rabbitmq = RabbitMQ(self, "RabbitMQ", secret=secret, vpc=vpc)
 
+        asg_update_secret_policy = aws_iam.CfnRole.PolicyProperty(
+            policy_document=aws_iam.PolicyDocument(
+                statements=[
+                    aws_iam.PolicyStatement(
+                        effect=aws_iam.Effect.ALLOW,
+                        actions=[
+                            "secretsmanager:UpdateSecret"
+                        ],
+                        resources=[
+                            f"arn:{Aws.PARTITION}:secretsmanager:{Aws.REGION}:{Aws.ACCOUNT_ID}:secret:{Aws.STACK_NAME}/instance/credentials-*"
+                        ]
+                    )
+                ]
+            ),
+            policy_name="AllowUpdateInstanceSecret"
+        )
+
         # asg
         with open("zulip/user_data.sh") as f:
             user_data = f.read()
         asg = Asg(
             self,
             "Asg",
+            additional_iam_role_policies=[asg_update_secret_policy],
             allow_associate_address = True,
             secret_arns=[db_secret.secret_arn(), ses.secret_arn(), secret.secret_arn()],
             use_graviton = False,
@@ -133,9 +154,31 @@ class ZulipStack(Stack):
         asg.asg.target_group_arns = [ alb.target_group.ref ]
 
         dns.add_alb(alb)
+        # add additional A record for subdomain realm URLs
+        subdomain_record_set = aws_route53.CfnRecordSetGroup(
+            self,
+            "ZulipSubdomainRecordSetGroup",
+            hosted_zone_name=f"{dns.route_53_hosted_zone_name_param.value_as_string}.",
+            comment=dns.hostname_param.value_as_string,
+            record_sets=[
+                aws_route53.CfnRecordSetGroup.RecordSetProperty(
+                    name=f"*.{dns.hostname_param.value_as_string}.",
+                    type="A",
+                    alias_target=aws_route53.CfnRecordSetGroup.AliasTargetProperty(
+                        dns_name=alb.alb.attr_dns_name,
+                        hosted_zone_id=alb.alb.attr_canonical_hosted_zone_id
+                    )
+                )
+            ]
+        )
+        subdomain_record_set.cfn_options.condition = dns.route_53_hosted_zone_name_exists_condition
 
-        # all subdomains should point to the main domain
-        # TODO
+        CfnOutput(
+            self,
+            "FirstUseInstructions",
+            description="Instructions for getting started",
+            value=f"Visit the URL in the 'initial_new_organization_link' secret value in the '{Aws.STACK_NAME}/instance/credentials' secret in Secrets Manager. This will allow you to create an initial organization and user in Zulip."
+        )
 
         parameter_groups = alb.metadata_parameter_group()
         parameter_groups += dns.metadata_parameter_group()
