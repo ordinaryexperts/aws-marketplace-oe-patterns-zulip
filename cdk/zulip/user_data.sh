@@ -1,120 +1,13 @@
 #!/bin/bash
 
 # aws cloudwatch
-cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
-{
-  "agent": {
-    "metrics_collection_interval": 60,
-    "run_as_user": "root",
-    "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log"
-  },
-  "metrics": {
-    "metrics_collected": {
-      "collectd": {
-        "metrics_aggregation_interval": 60
-      },
-      "disk": {
-        "measurement": ["used_percent"],
-        "metrics_collection_interval": 60,
-        "resources": ["*"]
-      },
-      "mem": {
-        "measurement": ["mem_used_percent"],
-        "metrics_collection_interval": 60
-      }
-    },
-    "append_dimensions": {
-      "ImageId": "\${!aws:ImageId}",
-      "InstanceId": "\${!aws:InstanceId}",
-      "InstanceType": "\${!aws:InstanceType}",
-      "AutoScalingGroupName": "\${!aws:AutoScalingGroupName}"
-    }
-  },
-  "logs": {
-    "logs_collected": {
-      "files": {
-        "collect_list": [
-          {
-            "file_path": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/dpkg.log",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/dpkg.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/apt/history.log",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/apt/history.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/cloud-init.log",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/cloud-init.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/cloud-init-output.log",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/cloud-init-output.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/auth.log",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/auth.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/syslog",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/syslog",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/amazon/ssm/amazon-ssm-agent.log",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/amazon/ssm/amazon-ssm-agent.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/amazon/ssm/errors.log",
-            "log_group_name": "${AsgSystemLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/amazon/ssm/errors.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/nginx/access.log",
-            "log_group_name": "${AsgAppLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/nginx/access.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/nginx/error.log",
-            "log_group_name": "${AsgAppLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/nginx/error.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/zulip/server.log",
-            "log_group_name": "${AsgAppLogGroup}",
-            "log_stream_name": "{instance_id}-/var/log/zulip/server.log",
-            "timezone": "UTC"
-          }
-        ]
-      }
-    },
-    "log_stream_name": "{instance_id}"
-  }
-}
-EOF
+sed -i 's/ASG_APP_LOG_GROUP_PLACEHOLDER/${AsgAppLogGroup}/g' /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+sed -i 's/ASG_SYSTEM_LOG_GROUP_PLACEHOLDER/${AsgSystemLogGroup}/g' /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 systemctl enable amazon-cloudwatch-agent
 systemctl start amazon-cloudwatch-agent
+
+# reprovision if access key is rotated
+# access key serial: ${SesInstanceUserAccessKeySerial}
 
 mkdir -p /opt/oe/patterns
 
@@ -233,10 +126,10 @@ ENABLE_FILE_LINKS = False
 ## need to manually edit Zulip's nginx configuration to use the new
 ## path.  For that reason, we recommend replacing /home/zulip/uploads
 ## with a symlink instead of changing LOCAL_UPLOADS_DIR.
-LOCAL_UPLOADS_DIR = "/home/zulip/uploads"
-# S3_AUTH_UPLOADS_BUCKET = ""
-# S3_AVATAR_BUCKET = ""
-# S3_REGION = None
+# LOCAL_UPLOADS_DIR = "/home/zulip/uploads"
+S3_AUTH_UPLOADS_BUCKET = "${AssetsBucketName}"
+S3_AVATAR_BUCKET = "${AvatarsBucketName}"
+S3_REGION = ${AWS::Region}
 # S3_ENDPOINT_URL = None
 # S3_SKIP_PROXY = True
 
@@ -290,6 +183,7 @@ rm /root/.pgpass
 su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'
 
 # run again after db initialized to get initial realm link
+# TODO: the link generated is not working - maybe bc RabbitMQ is still initializing...
 /root/check-secrets.py ${AWS::Region} ${InstanceSecretName} true
 
 sed -i "/ssl_certificate_key/a\    location /elb-check { access_log off; return 200 'ok'; add_header Content-Type text/plain; }" /etc/nginx/sites-available/zulip-enterprise

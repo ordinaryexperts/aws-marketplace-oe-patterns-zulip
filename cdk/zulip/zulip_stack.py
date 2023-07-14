@@ -59,16 +59,23 @@ class ZulipStack(Stack):
 
         dns = Dns(self, "Dns")
 
-        bucket = AssetsBucket(
+        assets_bucket = AssetsBucket(
             self,
             "AssetsBucket"
+        )
+
+        avatars_bucket = AssetsBucket(
+            self,
+            "AvatarsBucket",
+            object_ownership_value = "ObjectWriter",
+            remove_public_access_block = True
         )
 
         ses = Ses(
             self,
             "Ses",
             hosted_zone_name=dns.route_53_hosted_zone_name_param.value_as_string,
-            additional_iam_user_policies=[bucket.user_policy]
+            additional_iam_user_policies=[assets_bucket.user_policy, avatars_bucket.user_policy]
         )
 
         # db_secret
@@ -126,7 +133,8 @@ class ZulipStack(Stack):
             use_graviton = False,
             user_data_contents=user_data,
             user_data_variables = {
-                "AssetsBucketName": bucket.bucket_name(),
+                "AssetsBucketName": assets_bucket.bucket_name(),
+                "AvatarsBucketName": avatars_bucket.bucket_name(),
                 "DbSecretArn": db_secret.secret_arn(),
                 "RabbitMQSecretArn": secret.secret_arn(),
                 "Hostname": dns.hostname(),
