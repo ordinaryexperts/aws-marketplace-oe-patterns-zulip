@@ -25,10 +25,10 @@ from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
-AMI_ID="ami-02adec983f22e30c4"
-AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230608-0750"
+AMI_ID="ami-0b953ba5c3f6fa525"
+AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230715-0222"
 generated_ami_ids = {
-    "us-east-1": "ami-02adec983f22e30c4"
+    "us-east-1": "ami-0b953ba5c3f6fa525"
 }
 # End generated code block.
 
@@ -36,7 +36,7 @@ if 'TEMPLATE_VERSION' in os.environ:
     template_version = os.environ['TEMPLATE_VERSION']
 else:
     try:
-        template_version = subprocess.check_output(["git", "describe"]).strip().decode('ascii')
+        template_version = subprocess.check_output(["git", "describe", "--always"]).strip().decode('ascii')
     except:
         template_version = "CICD"
 

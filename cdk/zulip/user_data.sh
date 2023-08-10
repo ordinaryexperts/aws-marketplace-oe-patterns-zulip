@@ -129,7 +129,7 @@ ENABLE_FILE_LINKS = False
 # LOCAL_UPLOADS_DIR = "/home/zulip/uploads"
 S3_AUTH_UPLOADS_BUCKET = "${AssetsBucketName}"
 S3_AVATAR_BUCKET = "${AvatarsBucketName}"
-S3_REGION = ${AWS::Region}
+S3_REGION = "${AWS::Region}"
 # S3_ENDPOINT_URL = None
 # S3_SKIP_PROXY = True
 
@@ -169,6 +169,8 @@ secret_key = $SECRET_KEY
 camo_key = $CAMO_KEY
 # memcached_password = ""
 # redis_password = ""
+s3_key = $ACCESS_KEY_ID
+s3_secret_key = $SECRET_ACCESS_KEY
 zulip_org_key = $ZULIP_ORG_KEY
 zulip_org_id = $ZULIP_ORG_ID
 postgres_password = $DB_PASSWORD
