@@ -3,11 +3,12 @@ import subprocess
 from aws_cdk import (
     aws_iam,
     aws_route53,
+    aws_s3,
     Aws,
     CfnMapping,
     CfnOutput,
-    Fn,
-    Stack
+    Stack,
+    Token
 )
 from constructs import Construct
 
@@ -25,10 +26,10 @@ from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
-AMI_ID="ami-0b953ba5c3f6fa525"
-AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230715-0222"
+AMI_ID="ami-02443a474219a1fd7"
+AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230811-0221"
 generated_ami_ids = {
-    "us-east-1": "ami-0b953ba5c3f6fa525"
+    "us-east-1": "ami-02443a474219a1fd7"
 }
 # End generated code block.
 
@@ -48,7 +49,7 @@ class ZulipStack(Stack):
         ami_mapping={ "AMI": { "OEZULIP": AMI_NAME } }
         for region in generated_ami_ids.keys():
             ami_mapping[region] = { "AMI": generated_ami_ids[region] }
-        aws_ami_region_map = CfnMapping(
+        CfnMapping(
             self,
             "AWSAMIRegionMap",
             mapping=ami_mapping
@@ -69,6 +70,19 @@ class ZulipStack(Stack):
             "AvatarsBucket",
             object_ownership_value = "ObjectWriter",
             remove_public_access_block = True
+        )
+
+        avatars_bucket_name = Token.as_string(avatars_bucket.assets_bucket.ref)
+        avatars_bucket_policy = aws_iam.PolicyStatement(
+            actions=["s3:GetObject"],
+            resources=[f"arn:aws:s3:::{avatars_bucket_name}/*"],
+            principals=[aws_iam.AnyPrincipal()]
+        )
+        aws_s3.CfnBucketPolicy(
+            self,
+            "AvatarsBucketPolicy",
+            bucket=Token.as_string(avatars_bucket.assets_bucket.ref),
+            policy_document=aws_iam.PolicyDocument(statements=[avatars_bucket_policy])
         )
 
         ses = Ses(
@@ -148,9 +162,9 @@ class ZulipStack(Stack):
         asg.asg.node.add_dependency(redis.elasticache_cluster)
         asg.asg.node.add_dependency(ses.generate_smtp_password_custom_resource)
 
-        db_ingress       = Util.add_sg_ingress(db, asg.sg)
-        rabbitmq_ingress = Util.add_sg_ingress(rabbitmq, asg.sg)
-        redis_ingress    = Util.add_sg_ingress(redis, asg.sg)
+        Util.add_sg_ingress(db, asg.sg)
+        Util.add_sg_ingress(rabbitmq, asg.sg)
+        Util.add_sg_ingress(redis, asg.sg)
 
         alb = Alb(
             self,
@@ -185,7 +199,7 @@ class ZulipStack(Stack):
             self,
             "FirstUseInstructions",
             description="Instructions for getting started",
-            value=f"Visit the URL in the 'initial_new_organization_link' secret value in the '{Aws.STACK_NAME}/instance/credentials' secret in Secrets Manager. This will allow you to create an initial organization and user in Zulip."
+            value=f"To create an initial organization, connect to the EC2 instance with SSM Sessions Manager. Then run the following command to get a one-time link: sudo su zulip -c '/home/zulip/deployments/current/manage.py generate_realm_creation_link'"
         )
 
         parameter_groups = alb.metadata_parameter_group()

@@ -162,7 +162,6 @@ import uuid
 
 region_name = sys.argv[1]
 secret_name = sys.argv[2]
-generate_realm_link = sys.argv[3]
 
 client = boto3.client("secretsmanager", region_name=region_name)
 response = client.list_secrets(
@@ -195,11 +194,6 @@ if not 'secret_key' in current_secret:
 if not 'zulip_org_id' in current_secret:
     needs_update = True
     current_secret['zulip_org_id'] = str(uuid.uuid4())
-if generate_realm_link == 'true' and not 'initial_new_organization_link' in current_secret:
-    needs_update = True
-    cmd = "su zulip -c '/home/zulip/deployments/current/manage.py generate_realm_creation_link'"
-    output = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8').strip()
-    current_secret['initial_new_organization_link'] = output
 
 if needs_update:
   client.update_secret(

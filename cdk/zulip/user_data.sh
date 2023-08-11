@@ -45,7 +45,7 @@ RABBITMQ_ID=$(echo "${RabbitMQBroker.Arn}" | awk -F: '{print $NF}')
 mkdir -p /home/zulip/.postgresql
 wget -O /home/zulip/.postgresql/root.crt https://truststore.pki.rds.amazonaws.com/${AWS::Region}/${AWS::Region}-bundle.pem
 
-# /root/check-secrets.py ${AWS::Region} ${InstanceSecretName}
+/root/check-secrets.py ${AWS::Region} ${InstanceSecretName}
 
 aws ssm get-parameter \
     --name "/aws/reference/secretsmanager/${InstanceSecretName}" \
@@ -54,8 +54,14 @@ aws ssm get-parameter \
 | jq -r . > /opt/oe/patterns/instance.json
 
 ACCESS_KEY_ID=$(cat /opt/oe/patterns/instance.json | jq -r .access_key_id)
+AVATAR_SALT=$(cat /opt/oe/patterns/instance.json | jq -r .avatar_salt)
+CAMO_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .camo_key)
 SECRET_ACCESS_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .secret_access_key)
+SECRET_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .secret_key)
+SHARED_SECRET=$(cat /opt/oe/patterns/instance.json | jq -r .shared_secret)
 SMTP_PASSWORD=$(cat /opt/oe/patterns/instance.json | jq -r .smtp_password)
+ZULIP_ORG_ID=$(cat /opt/oe/patterns/instance.json | jq -r .zulip_org_id)
+ZULIP_ORG_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .zulip_org_key)
 
 cat <<EOF > /etc/zulip/zulip.conf
 [machine]
@@ -144,21 +150,6 @@ ENABLE_GRAVATAR = True
 CAMO_URI = "/external_content/"
 EOF
 
-/root/check-secrets.py ${AWS::Region} ${InstanceSecretName} false
-
-aws ssm get-parameter \
-    --name "/aws/reference/secretsmanager/${InstanceSecretName}" \
-    --with-decryption \
-    --query Parameter.Value \
-| jq -r . > /opt/oe/patterns/instance.json
-
-AVATAR_SALT=$(cat /opt/oe/patterns/instance.json | jq -r .avatar_salt)
-CAMO_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .camo_key)
-SECRET_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .secret_key)
-SHARED_SECRET=$(cat /opt/oe/patterns/instance.json | jq -r .shared_secret)
-ZULIP_ORG_ID=$(cat /opt/oe/patterns/instance.json | jq -r .zulip_org_id)
-ZULIP_ORG_KEY=$(cat /opt/oe/patterns/instance.json | jq -r .zulip_org_key)
-
 cat <<EOF > /etc/zulip/zulip-secrets.conf
 [secrets]
 avatar_salt = $AVATAR_SALT
@@ -183,10 +174,6 @@ psql -U zulip -h ${DbCluster.Endpoint.Address} -d zulip -c "CREATE SCHEMA IF NOT
 rm /root/.pgpass
 
 su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'
-
-# run again after db initialized to get initial realm link
-# TODO: the link generated is not working - maybe bc RabbitMQ is still initializing...
-/root/check-secrets.py ${AWS::Region} ${InstanceSecretName} true
 
 sed -i "/ssl_certificate_key/a\    location /elb-check { access_log off; return 200 'ok'; add_header Content-Type text/plain; }" /etc/nginx/sites-available/zulip-enterprise
 service nginx restart
