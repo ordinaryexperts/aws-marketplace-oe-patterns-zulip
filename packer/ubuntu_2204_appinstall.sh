@@ -118,6 +118,12 @@ cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
             "log_group_name": "ASG_APP_LOG_GROUP_PLACEHOLDER",
             "log_stream_name": "{instance_id}-/var/log/zulip/server.log",
             "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/mail.log",
+            "log_group_name": "ASG_APP_LOG_GROUP_PLACEHOLDER",
+            "log_stream_name": "{instance_id}-/var/log/mail.log",
+            "timezone": "UTC"
           }
         ]
       }
@@ -148,7 +154,7 @@ tar -xf zulip-server-$ZULIP_VERSION.tar.gz
 # git clone https://github.com/zulip/zulip.git zulip-server-$ZULIP_VERSION
 
 # front-end install
-PUPPET_CLASSES=zulip::profile::app_frontend ./zulip-server-$ZULIP_VERSION/scripts/setup/install --self-signed-cert --no-init-db --postgresql-missing-dictionaries
+PUPPET_CLASSES='zulip::profile::app_frontend, zulip::postfix_localmail' ./zulip-server-$ZULIP_VERSION/scripts/setup/install --self-signed-cert --no-init-db --postgresql-missing-dictionaries
 
 pip install boto3
 cat <<EOF > /root/check-secrets.py

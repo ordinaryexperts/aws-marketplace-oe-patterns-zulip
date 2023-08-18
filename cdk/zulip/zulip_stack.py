@@ -1,12 +1,17 @@
 import os
 import subprocess
 from aws_cdk import (
+    aws_ec2,
+    aws_elasticloadbalancingv2,
     aws_iam,
     aws_route53,
     aws_s3,
     Aws,
+    CfnCondition,
     CfnMapping,
     CfnOutput,
+    CfnParameter,
+    Fn,
     Stack,
     Token
 )
@@ -26,10 +31,10 @@ from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
-AMI_ID="ami-02443a474219a1fd7"
-AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230811-0221"
+AMI_ID="ami-0bf383f8f26bddfe4"
+AMI_NAME="ordinary-experts-patterns-zulip-alpha-20230817-0631"
 generated_ami_ids = {
-    "us-east-1": "ami-02443a474219a1fd7"
+    "us-east-1": "ami-0bf383f8f26bddfe4"
 }
 # End generated code block.
 
@@ -135,6 +140,19 @@ class ZulipStack(Stack):
             policy_name="AllowUpdateInstanceSecret"
         )
 
+        enable_incoming_email_param = CfnParameter(
+            self,
+            "EnableIncomingEmail",
+            allowed_values=[ "true", "false" ],
+            default="true",
+            description="Required: Enable Incoming Email support."
+        )
+        enable_incoming_email_condition = CfnCondition(
+            self,
+            "EnableIncomingEmailCondition",
+            expression=Fn.condition_equals(enable_incoming_email_param.value, "true")
+        )
+
         # asg
         with open("zulip/user_data.sh") as f:
             user_data = f.read()
@@ -150,6 +168,7 @@ class ZulipStack(Stack):
                 "AssetsBucketName": assets_bucket.bucket_name(),
                 "AvatarsBucketName": avatars_bucket.bucket_name(),
                 "DbSecretArn": db_secret.secret_arn(),
+                "EnableIncomingEmail": enable_incoming_email_param.value_as_string,
                 "RabbitMQSecretArn": secret.secret_arn(),
                 "Hostname": dns.hostname(),
                 "HostedZoneName": dns.route_53_hosted_zone_name_param.value_as_string,
@@ -173,13 +192,161 @@ class ZulipStack(Stack):
             health_check_path = "/elb-check",
             vpc=vpc
         )
-        asg.asg.target_group_arns = [ alb.target_group.ref ]
 
-        dns.add_alb(alb)
+        nlb = aws_elasticloadbalancingv2.CfnLoadBalancer(
+            self,
+            "Nlb",
+            scheme="internet-facing",
+            subnets=vpc.public_subnet_ids(),
+            type="network"
+        )
+        nlb.cfn_options.condition = enable_incoming_email_condition
+
+        email_target_group = aws_elasticloadbalancingv2.CfnTargetGroup(
+            self,
+            "EmailTargetGroup",
+            port=25,
+            protocol="TCP",
+            target_type="instance",
+            vpc_id=vpc.id()
+        )
+        email_target_group.cfn_options.condition = enable_incoming_email_condition
+
+        email_listener = aws_elasticloadbalancingv2.CfnListener(
+            self,
+            "EmailListener",
+            default_actions=[
+                aws_elasticloadbalancingv2.CfnListener.ActionProperty(
+                    target_group_arn=email_target_group.ref,
+                    type="forward"
+                )
+            ],
+            load_balancer_arn=nlb.ref,
+            port=25,
+            protocol="TCP"
+        )
+        email_listener.cfn_options.condition = enable_incoming_email_condition
+
+        email_ingress_cidr_param = CfnParameter(
+            self,
+            "EmailIngressCidr",
+            allowed_pattern=r"^((\d{1,3})\.){3}\d{1,3}/\d{1,2}$",
+            description="Required: VPC IPv4 CIDR block to restrict access to inbound email processing. Set to '0.0.0.0/0' to allow all access, or set to 'X.X.X.X/32' to restrict to one IP (replace Xs with your IP), or set to another CIDR range."
+        )
+
+        nlb_http_target_group = aws_elasticloadbalancingv2.CfnTargetGroup(
+            self,
+            "NlbHttpTargetGroup",
+            port=80,
+            protocol="TCP",
+            target_type="alb",
+            targets=[aws_elasticloadbalancingv2.CfnTargetGroup.TargetDescriptionProperty(
+                id=alb.alb.ref
+            )],
+            vpc_id=vpc.id()
+        )
+        nlb_http_target_group.cfn_options.condition = enable_incoming_email_condition
+
+        nlb_http_listener = aws_elasticloadbalancingv2.CfnListener(
+            self,
+            "NlbHttpListener",
+            default_actions=[
+                aws_elasticloadbalancingv2.CfnListener.ActionProperty(
+                    target_group_arn=nlb_http_target_group.ref,
+                    type="forward"
+                )
+            ],
+            load_balancer_arn=nlb.ref,
+            port=80,
+            protocol="TCP"
+        )
+        nlb_http_listener.cfn_options.condition = enable_incoming_email_condition
+
+        nlb_https_target_group = aws_elasticloadbalancingv2.CfnTargetGroup(
+            self,
+            "NlbHttpsTargetGroup",
+            port=443,
+            protocol="TCP",
+            target_type="alb",
+            targets=[aws_elasticloadbalancingv2.CfnTargetGroup.TargetDescriptionProperty(
+                id=alb.alb.ref
+            )],
+            vpc_id=vpc.id()
+        )
+        nlb_https_target_group.cfn_options.condition = enable_incoming_email_condition
+
+        nlb_https_listener = aws_elasticloadbalancingv2.CfnListener(
+            self,
+            "NlbHttpsListener",
+            default_actions=[
+                aws_elasticloadbalancingv2.CfnListener.ActionProperty(
+                    target_group_arn=nlb_https_target_group.ref,
+                    type="forward"
+                )
+            ],
+            load_balancer_arn=nlb.ref,
+            port=443,
+            protocol="TCP"
+        )
+        nlb_https_listener.cfn_options.condition = enable_incoming_email_condition
+
+        asg.asg.add_override(
+            "Properties.TargetGroupARNs",
+            {
+                "Fn::If": [
+                    enable_incoming_email_condition.logical_id,
+                    [email_target_group.ref, alb.target_group.ref],
+                    [alb.target_group.ref]
+                ]
+            }
+        )
+
+        email_sg_ingress = aws_ec2.CfnSecurityGroupIngress(
+            self,
+            "EmailSgIngress",
+            cidr_ip=email_ingress_cidr_param.value_as_string,
+            from_port=25,
+            group_id=asg.sg.ref,
+            ip_protocol="tcp",
+            to_port=25
+        )
+        email_sg_ingress.cfn_options.condition = enable_incoming_email_condition
+
+        # route 53
+        record_set = aws_route53.CfnRecordSetGroup(
+            self,
+            "RecordSetGroup",
+            hosted_zone_name=f"{dns.route_53_hosted_zone_name_param.value_as_string}.",
+            comment=dns.hostname_param.value_as_string,
+            record_sets=[
+                aws_route53.CfnRecordSetGroup.RecordSetProperty(
+                    name=f"{dns.hostname_param.value_as_string}.",
+                    type="A",
+                    alias_target=aws_route53.CfnRecordSetGroup.AliasTargetProperty(
+                        dns_name=Token.as_string(
+                            Fn.condition_if(
+                                enable_incoming_email_condition.logical_id,
+                                nlb.attr_dns_name,
+                                alb.alb.attr_dns_name
+                            )
+                        ),
+                        hosted_zone_id=Token.as_string(
+                            Fn.condition_if(
+                                enable_incoming_email_condition.logical_id,
+                                nlb.attr_canonical_hosted_zone_id,
+                                alb.alb.attr_canonical_hosted_zone_id
+                            )
+                        )
+                    )
+                )
+            ]
+        )
+        record_set.cfn_options.condition = dns.route_53_hosted_zone_name_exists_condition
+
         # add additional A record for subdomain realm URLs
         subdomain_record_set = aws_route53.CfnRecordSetGroup(
             self,
-            "ZulipSubdomainRecordSetGroup",
+            "SubdomainRecordSetGroup",
             hosted_zone_name=f"{dns.route_53_hosted_zone_name_param.value_as_string}.",
             comment=dns.hostname_param.value_as_string,
             record_sets=[
@@ -187,19 +354,52 @@ class ZulipStack(Stack):
                     name=f"*.{dns.hostname_param.value_as_string}.",
                     type="A",
                     alias_target=aws_route53.CfnRecordSetGroup.AliasTargetProperty(
-                        dns_name=alb.alb.attr_dns_name,
-                        hosted_zone_id=alb.alb.attr_canonical_hosted_zone_id
+                        dns_name=Token.as_string(
+                            Fn.condition_if(
+                                enable_incoming_email_condition.logical_id,
+                                nlb.attr_dns_name,
+                                alb.alb.attr_dns_name
+                            )
+                        ),
+                        hosted_zone_id=Token.as_string(
+                            Fn.condition_if(
+                                enable_incoming_email_condition.logical_id,
+                                nlb.attr_canonical_hosted_zone_id,
+                                alb.alb.attr_canonical_hosted_zone_id
+                            )
+                        )
                     )
                 )
             ]
         )
         subdomain_record_set.cfn_options.condition = dns.route_53_hosted_zone_name_exists_condition
 
+        # add MX record to support incoming email
+        email_record_set = aws_route53.CfnRecordSet(
+            self,
+            "EmailRecordSet",
+            hosted_zone_name=f"{dns.route_53_hosted_zone_name_param.value_as_string}.",
+            name=dns.hostname(),
+            resource_records=[
+                f"1 {dns.hostname()}."
+            ],
+            type="MX"
+        )
+        email_record_set.add_property_override("TTL", 3600)
+        email_record_set.cfn_options.condition = enable_incoming_email_condition
+
+        CfnOutput(
+            self,
+            "SiteUrlOutput",
+            description="The URL Endpoint",
+            value=f"https://{dns.hostname_param.value_as_string}"
+        )
+
         CfnOutput(
             self,
             "FirstUseInstructions",
             description="Instructions for getting started",
-            value=f"To create an initial organization, connect to the EC2 instance with SSM Sessions Manager. Then run the following command to get a one-time link: sudo su zulip -c '/home/zulip/deployments/current/manage.py generate_realm_creation_link'"
+            value="To create an initial organization, connect to the EC2 instance with SSM Sessions Manager. Then run the following command to get a one-time link: sudo su zulip -c '/home/zulip/deployments/current/manage.py generate_realm_creation_link'"
         )
 
         parameter_groups = alb.metadata_parameter_group()

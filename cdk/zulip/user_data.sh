@@ -150,6 +150,10 @@ ENABLE_GRAVATAR = True
 CAMO_URI = "/external_content/"
 EOF
 
+if [ "${EnableIncomingEmail}" == "true" ]; then
+   sed -i 's|EMAIL_GATEWAY_PATTERN = .*|EMAIL_GATEWAY_PATTERN = "%s@${Hostname}"|' /etc/zulip/settings.py
+fi
+
 cat <<EOF > /etc/zulip/zulip-secrets.conf
 [secrets]
 avatar_salt = $AVATAR_SALT
@@ -173,10 +177,20 @@ psql -U zulip -h ${DbCluster.Endpoint.Address} -d zulip -c "ALTER ROLE zulip SET
 psql -U zulip -h ${DbCluster.Endpoint.Address} -d zulip -c "CREATE SCHEMA IF NOT EXISTS zulip AUTHORIZATION zulip"
 rm /root/.pgpass
 
+# postfix config
+echo -n '${Hostname}' > /etc/mailname
+sed -i 's/\(mydestination = localhost,\) .*/\1 ${Hostname}/' /etc/postfix/main.cf
+sed -i 's/myhostname = .*/myhostname = ${Hostname}/' /etc/postfix/main.cf
+ESCAPED_HOSTNAME=$(echo "${Hostname}" | sed 's/\([.-]\)/\\\\\1/g')
+sed -i "s|if .*|if /@$ESCAPED_HOSTNAME|" /etc/postfix/virtual
+service postfix restart
+
 su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'
 
 sed -i "/ssl_certificate_key/a\    location /elb-check { access_log off; return 200 'ok'; add_header Content-Type text/plain; }" /etc/nginx/sites-available/zulip-enterprise
 service nginx restart
+
+su zulip -c '/home/zulip/deployments/current/scripts/restart-server'
 
 success=$?
 cfn-signal --exit-code $success --stack ${AWS::StackName} --resource Asg --region ${AWS::Region}

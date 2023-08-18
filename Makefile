@@ -8,10 +8,11 @@ deploy: build
 	--require-approval never \
 	--parameters AlbCertificateArn=arn:aws:acm:us-east-1:992593896645:certificate/40c05ec8-16d6-4fe2-8cbc-aecd7ae281b1 \
 	--parameters AlbIngressCidr=0.0.0.0/0 \
-	--parameters AsgReprovisionString=20230315.1 \
+	--parameters AsgReprovisionString=20230816.1 \
 	--parameters AsgInstanceType=m5.large \
 	--parameters DnsHostname=zulip-${USER}.dev.patterns.ordinaryexperts.com \
 	--parameters DnsRoute53HostedZoneName=dev.patterns.ordinaryexperts.com \
+	--parameters EmailIngressCidr=0.0.0.0/0 \
 	--parameters VpcId=vpc-00425deda4c835455 \
 	--parameters VpcPrivateSubnet1Id=subnet-030c94b9795c6cb96 \
 	--parameters VpcPrivateSubnet2Id=subnet-079290412ce63c4d5 \
