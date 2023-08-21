@@ -201,6 +201,8 @@ class ZulipStack(Stack):
             type="network"
         )
         nlb.cfn_options.condition = enable_incoming_email_condition
+        nlb.add_depends_on(alb.http_listener)
+        nlb.add_depends_on(alb.https_listener)
 
         email_target_group = aws_elasticloadbalancingv2.CfnTargetGroup(
             self,
