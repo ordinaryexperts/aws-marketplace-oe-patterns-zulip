@@ -1,14 +1,14 @@
 -include common.mk
 
 update-common:
-	wget -O common.mk https://raw.githubusercontent.com/ordinaryexperts/aws-marketplace-utilities/1.0.0/common.mk
+	wget -O common.mk https://raw.githubusercontent.com/ordinaryexperts/aws-marketplace-utilities/1.4.0/common.mk
 
 deploy: build
 	docker-compose run -w /code/cdk --rm devenv cdk deploy \
 	--require-approval never \
 	--parameters AlbCertificateArn=arn:aws:acm:us-east-1:992593896645:certificate/40c05ec8-16d6-4fe2-8cbc-aecd7ae281b1 \
 	--parameters AlbIngressCidr=0.0.0.0/0 \
-	--parameters AsgReprovisionString=20230816.1 \
+	--parameters AsgReprovisionString=20230824.1 \
 	--parameters AsgInstanceType=m5.large \
 	--parameters DnsHostname=zulip-${USER}.dev.patterns.ordinaryexperts.com \
 	--parameters DnsRoute53HostedZoneName=dev.patterns.ordinaryexperts.com \

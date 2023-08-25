@@ -178,6 +178,7 @@ psql -U zulip -h ${DbCluster.Endpoint.Address} -d zulip -c "CREATE SCHEMA IF NOT
 rm /root/.pgpass
 
 # postfix config
+/usr/sbin/make-ssl-cert generate-default-snakeoil
 echo -n '${Hostname}' > /etc/mailname
 sed -i 's/\(mydestination = localhost,\) .*/\1 ${Hostname}/' /etc/postfix/main.cf
 sed -i 's/myhostname = .*/myhostname = ${Hostname}/' /etc/postfix/main.cf
