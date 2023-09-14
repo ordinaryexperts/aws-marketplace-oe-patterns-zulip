@@ -73,6 +73,7 @@ class ZulipStack(Stack):
         avatars_bucket = AssetsBucket(
             self,
             "AvatarsBucket",
+            bucket_label = "Avatars",
             object_ownership_value = "ObjectWriter",
             remove_public_access_block = True
         )
@@ -140,12 +141,32 @@ class ZulipStack(Stack):
             policy_name="AllowUpdateInstanceSecret"
         )
 
+        admin_email_param = CfnParameter(
+            self,
+            "AdminEmail",
+            default="",
+            description="Optional: The email address to use for the Zulip administrator account. If not specified, 'zulip@{DnsHostname}' will be used."
+        )
+        giphy_api_key_param = CfnParameter(
+            self,
+            "GiphyApiKey",
+            default="",
+            description="Optional: GIPHY API Key. see https://zulip.readthedocs.io/en/stable/production/giphy-gif-integration.html"
+        )
+
         enable_incoming_email_param = CfnParameter(
             self,
             "EnableIncomingEmail",
             allowed_values=[ "true", "false" ],
             default="true",
-            description="Required: Enable Incoming Email support."
+            description="Required: Enable Incoming Email support. See https://zulip.readthedocs.io/en/stable/production/email-gateway.html"
+        )
+        enable_mobile_push_notifications_param = CfnParameter(
+            self,
+            "EnableMobilePushNotifications",
+            allowed_values=[ "true", "false" ],
+            default="false",
+            description="Required: Enable Mobile Push Notification Support. After settings this to 'true' you still need to register your server as described here: https://zulip.readthedocs.io/en/stable/production/mobile-push-notifications.html"
         )
         enable_incoming_email_condition = CfnCondition(
             self,
@@ -161,6 +182,10 @@ class ZulipStack(Stack):
             "Asg",
             additional_iam_role_policies=[asg_update_secret_policy],
             allow_associate_address = True,
+            create_and_update_timeout_minutes = 30,
+            default_instance_type = 't3.medium',
+            excluded_instance_families = ['t2'],
+            excluded_instance_sizes = ['nano', 'micro', 'small'],
             secret_arns=[db_secret.secret_arn(), ses.secret_arn(), secret.secret_arn()],
             use_graviton = False,
             user_data_contents=user_data,
@@ -233,7 +258,7 @@ class ZulipStack(Stack):
             self,
             "EmailIngressCidr",
             allowed_pattern=r"^((\d{1,3})\.){3}\d{1,3}/\d{1,2}$",
-            description="Required: VPC IPv4 CIDR block to restrict access to inbound email processing. Set to '0.0.0.0/0' to allow all access, or set to 'X.X.X.X/32' to restrict to one IP (replace Xs with your IP), or set to another CIDR range."
+            description="Required (if Enable incoming email is true): VPC IPv4 CIDR block to restrict access to inbound email processing. Set to '0.0.0.0/0' to allow all access, or set to 'X.X.X.X/32' to restrict to one IP (replace Xs with your IP), or set to another CIDR range."
         )
 
         nlb_http_target_group = aws_elasticloadbalancingv2.CfnTargetGroup(
@@ -404,8 +429,28 @@ class ZulipStack(Stack):
             value="To create an initial organization, connect to the EC2 instance with SSM Sessions Manager. Then run the following command to get a one-time link: sudo su zulip -c '/home/zulip/deployments/current/manage.py generate_realm_creation_link'"
         )
 
-        parameter_groups = alb.metadata_parameter_group()
+        parameter_groups = [
+            {
+                "Label": { "default": "Application Config" },
+                "Parameters": [
+                    admin_email_param.logical_id,
+                    giphy_api_key_param.logical_id,
+                    enable_mobile_push_notifications_param.logical_id,
+                    enable_incoming_email_param.logical_id,
+                    email_ingress_cidr_param.logical_id
+                ]
+            }
+        ]
+        parameter_groups += alb.metadata_parameter_group()
         parameter_groups += dns.metadata_parameter_group()
+        parameter_groups += db.metadata_parameter_group()
+        parameter_groups += db_secret.metadata_parameter_group()
+        parameter_groups += ses.metadata_parameter_group()
+        parameter_groups += assets_bucket.metadata_parameter_group()
+        parameter_groups += avatars_bucket.metadata_parameter_group()
+        parameter_groups += rabbitmq.metadata_parameter_group()
+        parameter_groups += secret.metadata_parameter_group()
+        parameter_groups += redis.metadata_parameter_group()
         parameter_groups += asg.metadata_parameter_group()
         parameter_groups += vpc.metadata_parameter_group()
 
@@ -415,8 +460,31 @@ class ZulipStack(Stack):
             "AWS::CloudFormation::Interface": {
                 "ParameterGroups": parameter_groups,
                 "ParameterLabels": {
+                    admin_email_param.logical_id: {
+                        "default": "Zulip Admin Email"
+                    },
+                    giphy_api_key_param.logical_id: {
+                        "default": "GIPHY API Key"
+                    },
+                    enable_mobile_push_notifications_param.logical_id: {
+                        "default": "Enable modile push notifications"
+                    },
+                    enable_incoming_email_param.logical_id: {
+                        "default": "Enable incoming email"
+                    },
+                    email_ingress_cidr_param.logical_id: {
+                        "default": "Incoming email ingress CIDR"
+                    },
                     **alb.metadata_parameter_labels(),
                     **dns.metadata_parameter_labels(),
+                    **db.metadata_parameter_labels(),
+                    **db_secret.metadata_parameter_labels(),
+                    **ses.metadata_parameter_labels(),
+                    **assets_bucket.metadata_parameter_labels(),
+                    **avatars_bucket.metadata_parameter_labels(),
+                    **rabbitmq.metadata_parameter_labels(),
+                    **secret.metadata_parameter_labels(),
+                    **redis.metadata_parameter_labels(),
                     **asg.metadata_parameter_labels(),
                     **vpc.metadata_parameter_labels()
                 }

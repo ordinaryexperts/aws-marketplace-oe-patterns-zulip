@@ -144,14 +144,25 @@ NAME_CHANGES_DISABLED = False
 AVATAR_CHANGES_DISABLED = False
 ENABLE_GRAVATAR = True
 
+# GIPHY_API_KEY = "<Your API key from GIPHY>"
+# PUSH_NOTIFICATION_BOUNCER_URL = ""
+
 ## The default CAMO_URI of "/external_content/" is served by the camo
 ## setup in the default Zulip nginx configuration.  Setting CAMO_URI
 ## to "" will disable the Camo integration.
-CAMO_URI = "/external_content/"
+CAMO_URI = ""
 EOF
-
+if [ -n "${AdminEmail}" ]; then
+    sed -i 's|ZULIP_ADMINISTRATOR = .*|ZULIP_ADMINISTRATOR = "${AdminEmail}"|' /etc/zulip/settings.py
+fi
+if [ -n "${GiphyApiKey}" ]; then
+    sed -i 's|# GIPHY_API_KEY = .*|GIPHY_API_KEY = "${GiphyApiKey}"|' /etc/zulip/settings.py
+fi
 if [ "${EnableIncomingEmail}" == "true" ]; then
-   sed -i 's|EMAIL_GATEWAY_PATTERN = .*|EMAIL_GATEWAY_PATTERN = "%s@${Hostname}"|' /etc/zulip/settings.py
+    sed -i 's|EMAIL_GATEWAY_PATTERN = .*|EMAIL_GATEWAY_PATTERN = "%s@${Hostname}"|' /etc/zulip/settings.py
+fi
+if [ "${EnableMobilePushNotifications}" == "true" ]; then
+    sed -i 's|# PUSH_NOTIFICATION_BOUNCER_URL = .*|PUSH_NOTIFICATION_BOUNCER_URL = "https://push.zulipchat.com"|' /etc/zulip/settings.py
 fi
 
 cat <<EOF > /etc/zulip/zulip-secrets.conf
