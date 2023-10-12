@@ -13,6 +13,8 @@ rm $SCRIPT_PREINSTALL
 # Zulip configuration
 #
 
+ZULIP_VERSION=7.4
+
 # configure CloudWatch Logs
 cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 {
@@ -139,14 +141,10 @@ cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 }
 EOF
 
-
 # Dependencies
 apt-get update && apt-get install -y gettext memcached
 
 # Download & unpack Zulip files
-
-ZULIP_VERSION=7.3
-
 mkdir -p /root/zulipfiles
 cd /root/zulipfiles
 
