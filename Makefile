@@ -13,6 +13,7 @@ deploy: build
 	--parameters DnsHostname=zulip-${USER}.dev.patterns.ordinaryexperts.com \
 	--parameters DnsRoute53HostedZoneName=dev.patterns.ordinaryexperts.com \
 	--parameters EmailIngressCidr=0.0.0.0/0 \
+	--parameters EnableMobilePushNotifications=true \
 	--parameters VpcId=vpc-00425deda4c835455 \
 	--parameters VpcPrivateSubnet1Id=subnet-030c94b9795c6cb96 \
 	--parameters VpcPrivateSubnet2Id=subnet-079290412ce63c4d5 \

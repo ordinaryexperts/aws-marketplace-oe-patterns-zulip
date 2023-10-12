@@ -146,6 +146,7 @@ ENABLE_GRAVATAR = True
 
 # GIPHY_API_KEY = "<Your API key from GIPHY>"
 # PUSH_NOTIFICATION_BOUNCER_URL = ""
+# SENTRY_DSN = ""
 
 ## The default CAMO_URI of "/external_content/" is served by the camo
 ## setup in the default Zulip nginx configuration.  Setting CAMO_URI
@@ -157,6 +158,9 @@ if [ -n "${AdminEmail}" ]; then
 fi
 if [ -n "${GiphyApiKey}" ]; then
     sed -i 's|# GIPHY_API_KEY = .*|GIPHY_API_KEY = "${GiphyApiKey}"|' /etc/zulip/settings.py
+fi
+if [ -n "${SentryDsn}" ]; then
+    sed -i 's|# SENTRY_DSN = .*|SENTRY_DSN = "${SentryDsn}"|' /etc/zulip/settings.py
 fi
 if [ "${EnableIncomingEmail}" == "true" ]; then
     sed -i 's|EMAIL_GATEWAY_PATTERN = .*|EMAIL_GATEWAY_PATTERN = "%s@${Hostname}"|' /etc/zulip/settings.py

@@ -31,10 +31,10 @@ from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
 # Begin generated code block
-AMI_ID="ami-05e2aac74ebdefdc0"
-AMI_NAME="ordinary-experts-patterns-zulip--20230825-0336"
+AMI_ID="ami-04ced1026bf91cc90"
+AMI_NAME="ordinary-experts-patterns-zulip--20230914-0717"
 generated_ami_ids = {
-    "us-east-1": "ami-05e2aac74ebdefdc0"
+    "us-east-1": "ami-04ced1026bf91cc90"
 }
 # End generated code block.
 
@@ -151,7 +151,13 @@ class ZulipStack(Stack):
             self,
             "GiphyApiKey",
             default="",
-            description="Optional: GIPHY API Key. see https://zulip.readthedocs.io/en/stable/production/giphy-gif-integration.html"
+            description="Optional: GIPHY API Key. See https://zulip.readthedocs.io/en/stable/production/giphy-gif-integration.html"
+        )
+        sentry_dsn_param = CfnParameter(
+            self,
+            "SentryDsn",
+            default="",
+            description="Optional: Sentry Data Source Name (DSN) endpoint. See https://zulip.readthedocs.io/en/latest/subsystems/logging.html#sentry-error-logging"
         )
 
         enable_incoming_email_param = CfnParameter(
@@ -465,6 +471,9 @@ class ZulipStack(Stack):
                     },
                     giphy_api_key_param.logical_id: {
                         "default": "GIPHY API Key"
+                    },
+                    sentry_dsn_param.logical_id: {
+                        "default": "Sentry DSN"
                     },
                     enable_mobile_push_notifications_param.logical_id: {
                         "default": "Enable modile push notifications"

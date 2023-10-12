@@ -145,7 +145,7 @@ apt-get update && apt-get install -y gettext memcached
 
 # Download & unpack Zulip files
 
-ZULIP_VERSION=7.2
+ZULIP_VERSION=7.3
 
 mkdir -p /root/zulipfiles
 cd /root/zulipfiles
