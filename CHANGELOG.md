@@ -1,5 +1,7 @@
 # Unreleased
 
+* Fix issue with ALB when no existing VPC given
+
 # 1.0.0
 
 * GIPHY integration
