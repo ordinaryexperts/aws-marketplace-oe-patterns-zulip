@@ -1,6 +1,7 @@
 # Unreleased
 
 * Fix issue with ALB when no existing VPC given
+* Upgrade to Zulip version 7.5
 
 # 1.0.0
 
