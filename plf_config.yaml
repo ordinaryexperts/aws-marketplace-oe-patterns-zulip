@@ -54,7 +54,7 @@ We support multiple availability zones using an RDS Aurora Postgresql cluster an
 "Countries to include": ""
 "Countries to exclude": ""
 # EULA: https://docs.aws.amazon.com/marketplace/latest/userguide/standardized-license-terms.html
-"End User License Agreement URL": "https://s3.amazonaws.com/EULA/Standard+Contract+for+AWS+Marketplace+2019-04-24.pdf"
+"End User License Agreement URL": "https://s3.amazonaws.com/aws-mp-standard-contracts/Standard-Contact-for-AWS-Marketplace-2022-07-14.pdf"
 # region availability fields are here, i.e. "me-south-1 Availability"
 "Make available in all future U.S. regions": "FALSE"
 "Make available in all future non-U.S. regions": "FALSE"
