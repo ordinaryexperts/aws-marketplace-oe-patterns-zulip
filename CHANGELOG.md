@@ -1,6 +1,6 @@
 # Unreleased
 
-* Upgrade to Zulip version 8.0
+* Upgrade to Zulip version 9.2
 
 # 1.1.0
 
