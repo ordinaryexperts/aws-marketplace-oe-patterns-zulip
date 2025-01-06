@@ -1,0 +1,22 @@
+general:
+  s3_bucket: github-user-and-bucket-taskcatbucket-2zppaw3wi3sx
+project:
+  name: oe-patterns-mastodon
+  regions:
+  - us-east-1
+  template: ./template.yaml
+tests:
+  allResources:
+    parameters:
+      AlbCertificateArn: arn:aws:acm:us-east-1:992593896645:certificate/dd740a7f-a824-4978-ac1c-fda59bea1017
+      AlbIngressCidr: 0.0.0.0/0
+      DnsHostname: "oe-patterns-zulip-taskcat-$[taskcat_random-string].dev.patterns.ordinaryexperts.com"
+      DnsRoute53HostedZoneName: dev.patterns.ordinaryexperts.com
+      EmailIngressCidr: 0.0.0.0/0
+      PipelineArtifactBucketName: github-user-and-bucket-taskcatbucket-2zppaw3wi3sx
+      SesCreateDomainIdentity: "false"
+      VpcId: vpc-00425deda4c835455
+      VpcPrivateSubnet1Id: subnet-030c94b9795c6cb96
+      VpcPrivateSubnet2Id: subnet-079290412ce63c4d5
+      VpcPublicSubnet1Id: subnet-0c2f5d4daa1792c8d
+      VpcPublicSubnet2Id: subnet-060c39a6ded9e89d7
