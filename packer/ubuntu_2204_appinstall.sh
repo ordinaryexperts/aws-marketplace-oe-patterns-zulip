@@ -1,7 +1,7 @@
 
-SCRIPT_VERSION=1.3.0
-SCRIPT_PREINSTALL=ubuntu_2004_2204_preinstall.sh
-SCRIPT_POSTINSTALL=ubuntu_2004_2204_postinstall.sh
+SCRIPT_VERSION=1.6.0
+SCRIPT_PREINSTALL=ubuntu_2204_2404_preinstall.sh
+SCRIPT_POSTINSTALL=ubuntu_2204_2404_postinstall.sh
 
 # preinstall steps
 curl -O "https://raw.githubusercontent.com/ordinaryexperts/aws-marketplace-utilities/$SCRIPT_VERSION/packer_provisioning_scripts/$SCRIPT_PREINSTALL"
@@ -13,7 +13,7 @@ rm $SCRIPT_PREINSTALL
 # Zulip configuration
 #
 
-ZULIP_VERSION=8.0
+ZULIP_VERSION=9.3
 
 # configure CloudWatch Logs
 cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
@@ -116,15 +116,9 @@ cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
             "timezone": "UTC"
           },
           {
-            "file_path": "/var/log/zulip/server.log",
+            "file_path": "/var/log/zulip/*.log",
             "log_group_name": "ASG_APP_LOG_GROUP_PLACEHOLDER",
-            "log_stream_name": "{instance_id}-/var/log/zulip/server.log",
-            "timezone": "UTC"
-          },
-          {
-            "file_path": "/var/log/zulip/fts-updates.log",
-            "log_group_name": "ASG_APP_LOG_GROUP_PLACEHOLDER",
-            "log_stream_name": "{instance_id}-/var/log/zulip/fts-updates.log",
+            "log_stream_name": "{instance_id}-/var/log/zulip/all-logs",
             "timezone": "UTC"
           },
           {
@@ -218,6 +212,9 @@ else:
 EOF
 chown root:root /root/check-secrets.py
 chmod 744 /root/check-secrets.py
+
+# clean out logs
+rm -rf /var/log/zulip/*
 
 # post install steps
 curl -O "https://raw.githubusercontent.com/ordinaryexperts/aws-marketplace-utilities/$SCRIPT_VERSION/packer_provisioning_scripts/$SCRIPT_POSTINSTALL"

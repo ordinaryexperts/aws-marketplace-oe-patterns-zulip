@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM ubuntu:22.04
 
 ENV IN_DOCKER=true
 COPY setup.sh /tmp/setup.sh
