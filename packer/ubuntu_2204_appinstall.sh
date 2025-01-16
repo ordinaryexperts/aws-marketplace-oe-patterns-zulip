@@ -213,6 +213,10 @@ EOF
 chown root:root /root/check-secrets.py
 chmod 744 /root/check-secrets.py
 
+# turn off supervisor - will re-enable at first boot
+systemctl stop supervisor
+systemctl disable supervisor
+
 # clean out logs
 rm -rf /var/log/zulip/*
 

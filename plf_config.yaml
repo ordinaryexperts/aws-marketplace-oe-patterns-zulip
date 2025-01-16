@@ -6,7 +6,7 @@
 "SKU": "OE_PATTERNS_ZULIP"
 "Software by": "Ordinary Experts"
 "Title": "Ordinary Experts Zulip Pattern"
-"Short Description": "The Ordinary Experts Zulip Pattern is a custom AMI + open-source AWS CloudFormation template that provisions a production-ready, AWS infrastructure solution for deploying Zulip 9.2."
+"Short Description": "The Ordinary Experts Zulip Pattern is a custom AMI + open-source AWS CloudFormation template that provisions a production-ready, AWS infrastructure solution for deploying Zulip 9.3."
 "Full Description": "The Ordinary Experts Zulip Pattern is an open-source AWS CloudFormation template that offers an easy-to-install AWS infrastructure solution for quickly deploying Zulip, using both AWS and Zulip best practices.
 
 Automatically configured to support auto-scaling through AWS Autoscaling Groups, this solution leverages an S3 bucket for user generated content between application servers. It also provisions an ElastiCache Redis cluster for cache. It configures SES with Easy DKIM for emails, and configures Route53 with convenient DNS entries.
@@ -14,7 +14,7 @@ Automatically configured to support auto-scaling through AWS Autoscaling Groups,
 The template ensure multi-level security by incorporating AWS IAM for federated access to resources with least privilege and AWS managed keys and Secret Manager to manage secrets for encryption of data at rest and in transit.
 
 We support multiple availability zones using an RDS Aurora Postgresql cluster and EC2 Auto Scaling Groups."
-"Highlight1": "Production-ready Zulip v9.2 site, with search, email, and caching"
+"Highlight1": "Production-ready Zulip v9.3 site, with search, email, and caching"
 "Highlight2": "Integrated with AWS Certificate Manager for HTTPS support"
 "Highlight3": "Logs in CloudWatch Logs, Remote access via Session Manager"
 "Product Category1": "Application Stacks"
@@ -43,7 +43,7 @@ We support multiple availability zones using an RDS Aurora Postgresql cluster an
 "Operating System Username": "ubuntu"
 "PIOPS Total": ""
 "AWS Services Required": "Amazon EC2, Amazon RDS, Amazon S3, Amazon CloudWatch, Amazon ElastiCache, Amazon VPC, Amazon SecretsManager, Amazon IAM, Amazon SNS, Amazon CertificateManager, Amazon CloudFormation"
-"3rd Party Software Included": "Zulip v9.2, Ubuntu packages: curl git jq ntp unzip vim wget zip python-pip collectd ruby binutils git nginx AWS CloudFormation utilities, AWS CLI, AWS CloudWatch agent"
+"3rd Party Software Included": "Zulip v9.3, Ubuntu packages: curl git jq ntp unzip vim wget zip python-pip collectd ruby binutils git nginx AWS CloudFormation utilities, AWS CLI, AWS CloudWatch agent"
 "Version Title": "{{version}}"
 "Release Notes": "See GitHub project for release notes."
 "Upgrade Instructions": "Re-run the stack to apply new infrastructure changes."

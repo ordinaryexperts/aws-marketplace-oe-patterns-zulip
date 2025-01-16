@@ -1,5 +1,7 @@
 # Unreleased
 
+# 1.2.0
+
 * Upgrade to Zulip version 9.3
 * Upgrade to OE Common Constructs 4.1.9
 * Upgrade to CDK 2.120.0

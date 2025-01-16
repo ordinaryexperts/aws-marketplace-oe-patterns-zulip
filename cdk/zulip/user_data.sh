@@ -201,12 +201,63 @@ ESCAPED_HOSTNAME=$(echo "${Hostname}" | sed 's/\([.-]\)/\\\\\1/g')
 sed -i "s|if .*|if /@$ESCAPED_HOSTNAME|" /etc/postfix/virtual
 service postfix restart
 
-su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'
-
 sed -i "/ssl_certificate_key/a\    location /elb-check { access_log off; return 200 'ok'; add_header Content-Type text/plain; }" /etc/nginx/sites-available/zulip-enterprise
 service nginx restart
 
-su zulip -c '/home/zulip/deployments/current/scripts/restart-server'
+su zulip -c '/home/zulip/deployments/current/scripts/setup/initialize-database'
 
+# turn on supervisor
+systemctl enable supervisor
+systemctl start supervisor
 success=$?
+
+HOST_ENTRY="${Hostname}"
+# this is needed if service isn't publicly available
+if ! grep -q "127.0.0.1.*$HOST_ENTRY" /etc/hosts; then
+    sed -i "/127.0.0.1/s/$/ $HOST_ENTRY/" /etc/hosts
+fi
+
+URL="https://${Hostname}"
+TIMEOUT=15
+MAX_RETRIES=20
+
+if [ "$success" -eq 0 ]; then
+  for ((i=1; i<=MAX_RETRIES; i++)); do
+    # Capture headers, body, and status code in one request
+    RESPONSE=$(curl -s --insecure --max-time "$TIMEOUT" -D - -w "||%{http_code}" "$URL")
+    HTTP_CODE="${!RESPONSE##*||}"
+    HTTP_DATA="${!RESPONSE%||*}"  # includes headers + body
+
+    if [ "$HTTP_CODE" -eq 200 ]; then
+      echo "Successfully reached $URL with 200 OK"
+      success=0
+      break
+    elif [ "$HTTP_CODE" -eq 302 ]; then
+      # Check for 'Location: /login/'
+      if echo "$HTTP_DATA" | grep -q -i "Location: .*\/login\/"; then
+        echo "Got 302 redirect to /login/; treating as success."
+        success=0
+        break
+      fi
+    elif [ "$HTTP_CODE" -eq 404 ]; then
+      if echo "$HTTP_DATA" | grep -q "No organization found"; then
+        echo "Got 404 but found 'No organization found'; treating as success."
+        success=0
+        break
+      fi
+    fi
+
+    echo "Attempt $i/$MAX_RETRIES failed with HTTP code $HTTP_CODE... retrying in $TIMEOUT seconds..."
+    sleep "$TIMEOUT"
+  done
+
+  if [ "$i" -gt "$MAX_RETRIES" ]; then
+    echo "Failed to reach $URL with a valid response after $MAX_RETRIES attempts."
+    success=1
+  fi
+else
+  echo "Service failed to start. Skipping URL checks."
+  success=1
+fi
+
 cfn-signal --exit-code $success --stack ${AWS::StackName} --resource Asg --region ${AWS::Region}
