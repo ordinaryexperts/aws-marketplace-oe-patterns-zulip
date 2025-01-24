@@ -41,10 +41,6 @@ RABBITMQ_PASSWORD=$(cat /opt/oe/patterns/rabbitmq_secret.json | jq -r .password)
 RABBITMQ_USERNAME=$(cat /opt/oe/patterns/rabbitmq_secret.json | jq -r .username)
 RABBITMQ_ID=$(echo "${RabbitMQBroker.Arn}" | awk -F: '{print $NF}')
 
-# drop RDS pem cert onto instance
-mkdir -p /home/zulip/.postgresql
-wget -O /home/zulip/.postgresql/root.crt https://truststore.pki.rds.amazonaws.com/${AWS::Region}/${AWS::Region}-bundle.pem
-
 /root/check-secrets.py ${AWS::Region} ${InstanceSecretName}
 
 aws ssm get-parameter \

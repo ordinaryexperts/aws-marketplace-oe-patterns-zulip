@@ -13,7 +13,7 @@ rm $SCRIPT_PREINSTALL
 # Zulip configuration
 #
 
-ZULIP_VERSION=9.3
+ZULIP_VERSION=9.4
 
 # configure CloudWatch Logs
 cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
@@ -212,6 +212,12 @@ else:
 EOF
 chown root:root /root/check-secrets.py
 chmod 744 /root/check-secrets.py
+
+# download RDS pem cert
+mkdir -p /home/zulip/.postgresql
+wget -O /home/zulip/.postgresql/root.crt https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+chown zulip:zulip /home/zulip/.postgresql/root.crt
+chmod 600 /home/zulip/.postgresql/root.crt
 
 # turn off supervisor - will re-enable at first boot
 systemctl stop supervisor
