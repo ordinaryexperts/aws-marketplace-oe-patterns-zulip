@@ -8,6 +8,7 @@
 * Upgrade to OE Utilities 1.6.0
 * Upgrade to OE devenv 2.5.3
 * Add TaskCat test
+* Add GitHub Actions for TaskCat
 
 # 1.1.0
 
