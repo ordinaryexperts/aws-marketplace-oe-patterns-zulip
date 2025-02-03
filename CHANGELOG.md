@@ -2,7 +2,7 @@
 
 # 1.2.0
 
-* Upgrade to Zulip version 9.3
+* Upgrade to Zulip version 9.4
 * Upgrade to OE Common Constructs 4.1.9
 * Upgrade to CDK 2.120.0
 * Upgrade to OE Utilities 1.6.0
