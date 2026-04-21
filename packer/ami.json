@@ -8,17 +8,31 @@
     {
       "type": "amazon-ebs",
       "region": "us-east-1",
-      "source_ami": "ami-0557a15b87f6559cf",
+      "source_ami_filter": {
+        "owners": ["099720109477"],
+        "filters": {
+          "name": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*",
+          "virtualization-type": "hvm",
+          "root-device-type": "ebs"
+        },
+        "most_recent": true
+      },
       "instance_type": "m5.xlarge",
       "ssh_username": "ubuntu",
-      "ami_name": "ordinary-experts-patterns-zulip-{{user `version`}}-{{isotime \"20060102-0304\"}}"
+      "ami_name": "ordinary-experts-patterns-zulip-{{user `version`}}-{{isotime \"20060102-0304\"}}",
+      "launch_block_device_mappings": [{
+        "device_name": "/dev/sda1",
+        "volume_type": "gp3",
+        "volume_size": 30,
+        "delete_on_termination": true
+      }]
     }
   ],
   "provisioners": [
     {
       "type": "shell",
       "execute_command": "{{.Vars}} sudo -S -E bash '{{.Path}}'",
-      "script": "./packer/ubuntu_2204_appinstall.sh"
+      "script": "./packer/ubuntu_2404_appinstall.sh"
     }
   ],
   "post-processors": [

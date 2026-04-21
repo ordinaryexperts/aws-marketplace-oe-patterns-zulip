@@ -40,6 +40,10 @@ aws ssm get-parameter \
 RABBITMQ_PASSWORD=$(cat /opt/oe/patterns/rabbitmq_secret.json | jq -r .password)
 RABBITMQ_USERNAME=$(cat /opt/oe/patterns/rabbitmq_secret.json | jq -r .username)
 RABBITMQ_ID=$(echo "${RabbitMQBroker.Arn}" | awk -F: '{print $NF}')
+# AWS moved Amazon MQ endpoints from .amazonaws.com to .on.aws; derive the real host from DescribeBroker
+RABBITMQ_HOST=$(aws mq describe-broker --broker-id "$RABBITMQ_ID" --region ${AWS::Region} \
+    --query 'BrokerInstances[0].Endpoints[0]' --output text \
+  | sed -E 's|^amqps?://||; s|:[0-9]+$||')
 
 /root/check-secrets.py ${AWS::Region} ${InstanceSecretName}
 
@@ -95,7 +99,7 @@ AUTHENTICATION_BACKENDS: Tuple[str, ...] = (
 
 REMOTE_POSTGRES_HOST = "${DbCluster.Endpoint.Address}"
 
-RABBITMQ_HOST = "$RABBITMQ_ID.mq.${AWS::Region}.amazonaws.com"
+RABBITMQ_HOST = "$RABBITMQ_HOST"
 RABBITMQ_PORT = 5671
 RABBITMQ_USE_TLS = True
 ## To use another RabbitMQ user than the default "zulip", set RABBITMQ_USERNAME here.

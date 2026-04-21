@@ -1,5 +1,6 @@
+set -euo pipefail
 
-SCRIPT_VERSION=1.6.0
+SCRIPT_VERSION=1.9.2
 SCRIPT_PREINSTALL=ubuntu_2204_2404_preinstall.sh
 SCRIPT_POSTINSTALL=ubuntu_2204_2404_postinstall.sh
 
@@ -13,7 +14,7 @@ rm $SCRIPT_PREINSTALL
 # Zulip configuration
 #
 
-ZULIP_VERSION=9.4
+ZULIP_VERSION=11.6
 
 # configure CloudWatch Logs
 cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
@@ -152,12 +153,12 @@ tar -xf zulip-server-$ZULIP_VERSION.tar.gz
 # git clone https://github.com/zulip/zulip.git zulip-server-$ZULIP_VERSION
 
 # front-end install
-PUPPET_CLASSES='zulip::profile::app_frontend, zulip::postfix_localmail, zulip::process_fts_updates' ./zulip-server-$ZULIP_VERSION/scripts/setup/install --self-signed-cert --no-init-db --postgresql-missing-dictionaries
+PUPPET_CLASSES='zulip::profile::app_frontend, zulip::local_mailserver, zulip::process_fts_updates' ./zulip-server-$ZULIP_VERSION/scripts/setup/install --self-signed-cert --no-init-db
 rm -f /etc/ssl/certs/ssl-cert-snakeoil.pem
 rm -rf /var/log/zulip/*
 rm -f /etc/zulip/zulip-secrets.conf
 
-pip install boto3
+pip install boto3 --break-system-packages
 cat <<EOF > /root/check-secrets.py
 #!/usr/bin/env python3
 

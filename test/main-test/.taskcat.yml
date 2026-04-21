@@ -1,14 +1,14 @@
 general:
   s3_bucket: github-user-and-bucket-taskcatbucket-2zppaw3wi3sx
 project:
-  name: oe-patterns-mastodon
+  name: oe-patterns-zulip
   regions:
   - us-east-1
   template: ./template.yaml
 tests:
   allResources:
     parameters:
-      AlbCertificateArn: arn:aws:acm:us-east-1:992593896645:certificate/dd740a7f-a824-4978-ac1c-fda59bea1017
+      AlbCertificateArn: arn:aws:acm:us-east-1:992593896645:certificate/943928d7-bfce-469c-b1bf-11561024580e
       AlbIngressCidr: 0.0.0.0/0
       DnsHostname: "oe-patterns-zulip-taskcat-$[taskcat_random-string].dev.patterns.ordinaryexperts.com"
       DnsRoute53HostedZoneName: dev.patterns.ordinaryexperts.com

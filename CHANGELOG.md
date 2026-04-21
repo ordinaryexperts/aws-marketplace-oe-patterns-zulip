@@ -1,5 +1,15 @@
 # Unreleased
 
+# 1.3.0
+
+* Upgrade base OS to Ubuntu 24.04
+* Upgrade to Zulip version 11.6
+* Upgrade to OE Common Constructs 4.5.1
+* Upgrade to CDK 2.225.0
+* Upgrade to OE Utilities 1.9.2
+* Upgrade to OE devenv 2.8.3
+* Adopt versioned AMI parameter (`AsgAmiIdv130`)
+
 # 1.2.0
 
 * Add LICENSE file
