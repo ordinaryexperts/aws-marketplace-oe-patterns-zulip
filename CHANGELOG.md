@@ -1,5 +1,7 @@
 # Unreleased
 
+# 1.3.0
+
 * Upgrade base OS to Ubuntu 24.04
 * Upgrade to Zulip version 11.6
 * Upgrade to OE Common Constructs 4.5.1
