@@ -32,3 +32,16 @@ scripts/common/*
 # plf files
 plf.xlsx
 plf-zulip*
+
+# scripts fetched from aws-marketplace-utilities at rebrand time
+scripts/marketplace_rebrand.py
+scripts/marketplace_rebrand_lib.py
+.marketplace_changeset
+
+# scripts fetched from aws-marketplace-utilities at reprice time
+scripts/marketplace_reprice.py
+scripts/marketplace_reprice_lib.py
+.marketplace_changeset_pricing
+
+# local cache from the superpowers brainstorming skill (HTML scratch, server PIDs, logs)
+.superpowers/

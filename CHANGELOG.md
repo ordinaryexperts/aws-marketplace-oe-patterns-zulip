@@ -1,5 +1,8 @@
 # Unreleased
 
+* Rebrand AWS Marketplace listing to "Zulip on AWS by FOSSonCloud" with new FOSSonCloud logo
+* Flatten Marketplace pricing to $0.02/hr across all instance dimensions
+
 # 1.3.0
 
 * Upgrade base OS to Ubuntu 24.04
