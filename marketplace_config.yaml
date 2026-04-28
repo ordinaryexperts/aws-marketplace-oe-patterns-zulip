@@ -1,0 +1,123 @@
+# AWS Marketplace submission configuration
+# Used by `make marketplace-validate` / `make marketplace-submit` / `make marketplace-status`
+# (via scripts/marketplace.py in the devenv image).
+
+product_id: "54b2faff-7db0-4c4e-92ee-65d6eacdab16"
+
+# Public HTTPS URL to the product logo image (PNG). Consumed by scripts/marketplace_rebrand.py.
+# Identical across all FOSSonCloud patterns — the same file lives at a single S3 object.
+logo_url: "https://ordinary-experts-aws-marketplace-pattern-artifacts.s3.amazonaws.com/fossoncloud-logo.png"
+
+# IAM role that allows AWS Marketplace to read the AMI
+ami_access_role_arn: "arn:aws:iam::879777583535:role/AWSMarketplaceAMIScanning"
+
+# Pattern for the CloudFormation parameter that receives the AMI ID.
+# {version} is the pattern version with dots stripped (e.g. "1.3.0" -> "130").
+ami_parameter_pattern: "AsgAmiIdv{version}"
+
+# S3 bucket and path prefix where CloudFormation templates are published
+template_bucket: "ordinary-experts-aws-marketplace-pattern-artifacts"
+template_pattern: "zulip"
+
+# Whether to include a standalone AMI delivery option in addition to the
+# CloudFormation delivery option. This product ships as a CloudFormation
+# template only.
+include_standalone_ami: false
+
+# AMI / OS metadata
+operating_system: "UBUNTU"
+operating_system_version: "24.04"
+username: "ubuntu"
+recommended_instance_type: "m5.xlarge"
+
+usage_instructions: >-
+  Run the stack, providing valid parameters. When the stack creation completes,
+  go to the outputs of the stack and open the URL in your browser. See the
+  FirstUseInstructions output for guidance on creating an initial organization.
+  To access the application servers, find the EC2 instance in the AWS console
+  and Connect using the Session Manager option. For more detailed instructions,
+  see the GitHub project.
+
+# CloudFormation delivery option details
+delivery_option:
+  short_description: |
+    Deploy a production-ready Zulip 11.6 chat server on AWS with this CloudFormation template and custom AMI. Provisions VPC, Auto Scaling Group, Aurora PostgreSQL, ElastiCache Redis, Amazon MQ RabbitMQ, S3, SES, and Route53.
+  long_description: |
+    Ordinary Experts Zulip Pattern deploys a production-ready Zulip chat server on AWS using AWS and Zulip best practices.
+
+    WHAT'S DEPLOYED
+
+    - VPC with public and private subnets (or use your existing VPC)
+    - Application Load Balancer with ACM certificate for HTTPS
+    - Network Load Balancer for inbound SMTP email (optional)
+    - Auto Scaling Group with EC2 instances running Zulip 11.6
+    - Aurora PostgreSQL cluster (multi-AZ)
+    - ElastiCache Redis cluster for caching
+    - Amazon MQ RabbitMQ broker for the Zulip queue worker
+    - S3 buckets for user-uploaded assets and public avatars
+    - SES domain identity with Easy DKIM for outbound email
+    - Route53 DNS records (including wildcard for Zulip realm subdomains)
+    - CloudWatch Logs integration
+    - AWS Secrets Manager for credential storage
+    - IAM roles with least-privilege permissions
+
+    REQUIREMENTS
+
+    - Route 53 hosted zone for DNS
+    - ACM certificate with a SAN covering the base hostname AND its wildcard
+      subdomain (Zulip uses subdomains for realms)
+  architecture_diagram_url: "https://ordinary-experts-aws-marketplace-pattern-artifacts.s3.amazonaws.com/zulip/1.3.0/diagram.png"
+
+# Rebrand metadata — consumed by scripts/marketplace_rebrand.py in utilities 1.9.4+
+product_info:
+  title: "Zulip on AWS by FOSSonCloud"
+  short_description: >-
+    Zulip on AWS by FOSSonCloud is a custom AMI + open-source AWS CloudFormation
+    template that provisions a production-ready, AWS infrastructure solution for
+    deploying Zulip 11.6.
+  long_description: |
+    Zulip on AWS by FOSSonCloud is an open-source AWS CloudFormation template that
+    offers an easy-to-install AWS infrastructure solution for quickly deploying
+    Zulip, using both AWS and Zulip best practices.
+
+    Automatically configured to support auto-scaling through AWS Autoscaling Groups,
+    this solution leverages an S3 bucket for user generated content between
+    application servers. It also provisions an ElastiCache Redis cluster for cache,
+    an Amazon MQ RabbitMQ broker for the Zulip queue worker, and an Aurora
+    PostgreSQL cluster for the database. It configures SES with Easy DKIM for
+    emails, and configures Route53 with convenient DNS entries.
+
+    The template ensures multi-level security by incorporating AWS IAM for
+    federated access to resources with least privilege and AWS managed keys and
+    Secrets Manager to manage secrets for encryption of data at rest and in transit.
+
+    We support multiple availability zones using an RDS Aurora Postgresql cluster
+    and EC2 Auto Scaling Groups.
+  highlights:
+    - "Production-ready Zulip v11.6 site, with search, email, and caching"
+    - "Integrated with AWS Certificate Manager for HTTPS support"
+    - "Logs in CloudWatch Logs, Remote access via Session Manager"
+  categories:
+    - "Application Stacks"
+    - "Media & Entertainment"
+    - "Content Management"
+  search_keywords:
+    - "zulip"
+    - "social"
+    - "chat"
+  resources:
+    - name: "FOSSonCloud Product Page"
+      url:  "https://fossoncloud.com/products/zulip"
+    - name: "Github Source Code and Documentation"
+      url:  "https://github.com/ordinaryexperts/aws-marketplace-oe-patterns-zulip"
+    - name: "Zulip Homepage"
+      url:  "https://zulip.com/"
+  support_description: |
+    Email support offered with subscription.
+    https://fossoncloud.com/products/zulip
+  sku: "OE_PATTERNS_ZULIP"
+
+# Repricing — consumed by scripts/marketplace_reprice.py in utilities 1.10.0+.
+# All UsageBasedPricingTerm dimensions in the offer will be set to this value.
+# Quote the value to keep it as a string (the API rejects floats).
+flat_price: "0.02"
