@@ -8,7 +8,7 @@ deploy: build
 	--require-approval never \
 	--parameters AlbCertificateArn=arn:aws:acm:us-east-1:992593896645:certificate/943928d7-bfce-469c-b1bf-11561024580e \
 	--parameters AlbIngressCidr=0.0.0.0/0 \
-	--parameters AsgAmiIdv140=ami-01aaaebac2a5d501e \
+	--parameters AsgAmiIdv200=ami-01aaaebac2a5d501e \
 	--parameters AsgReprovisionString=20230824.1 \
 	--parameters AsgInstanceType=m5.large \
 	--parameters DnsHostname=zulip-${USER}.dev.patterns.ordinaryexperts.com \
