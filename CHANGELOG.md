@@ -1,7 +1,7 @@
-# Unreleased
+# 2.0.0
 
 * Upgrade to Zulip version 12.0
-* Bump versioned AMI parameter to `AsgAmiIdv140`
+* Bump versioned AMI parameter to `AsgAmiIdv200`
 * Add `test/integration/` pytest suite (health + SSM-driven realm bootstrap + REST API workflow)
 * Bump `common.mk` pin to 1.9.4
 * Rebrand AWS Marketplace listing to "Zulip on AWS by FOSSonCloud" with new FOSSonCloud logo
