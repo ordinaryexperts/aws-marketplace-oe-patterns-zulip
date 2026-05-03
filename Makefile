@@ -8,7 +8,7 @@ deploy: build
 	--require-approval never \
 	--parameters AlbCertificateArn=arn:aws:acm:us-east-1:992593896645:certificate/943928d7-bfce-469c-b1bf-11561024580e \
 	--parameters AlbIngressCidr=0.0.0.0/0 \
-	--parameters AsgAmiIdv130=ami-0b55e1e78acad38d9 \
+	--parameters AsgAmiIdv200=ami-01aaaebac2a5d501e \
 	--parameters AsgReprovisionString=20230824.1 \
 	--parameters AsgInstanceType=m5.large \
 	--parameters DnsHostname=zulip-${USER}.dev.patterns.ordinaryexperts.com \
@@ -16,6 +16,12 @@ deploy: build
 	--parameters EmailIngressCidr=0.0.0.0/0 \
 	--parameters EnableMobilePushNotifications=true \
 	--parameters SesCreateDomainIdentity=true
+
+test-integration: build
+	docker compose run -w /code/test/integration --rm devenv bash -c "pip3 install -q -r requirements.txt --break-system-packages && pytest -v $(INTEGRATION_TEST_FILE)"
+
+test-integration-all: build
+	docker compose run -w /code/test/integration --rm devenv bash -c "pip3 install -q -r requirements.txt --break-system-packages && pytest -v"
 
 REBRAND_SCRIPT_VERSION = 1.10.0
 REBRAND_SCRIPT_URL = https://raw.githubusercontent.com/ordinaryexperts/aws-marketplace-utilities/$(REBRAND_SCRIPT_VERSION)/scripts

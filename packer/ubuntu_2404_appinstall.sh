@@ -14,7 +14,7 @@ rm $SCRIPT_PREINSTALL
 # Zulip configuration
 #
 
-ZULIP_VERSION=11.6
+ZULIP_VERSION=12.0
 
 # configure CloudWatch Logs
 cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
