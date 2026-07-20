@@ -29,7 +29,7 @@ from oe_patterns_cdk_common.ses import Ses
 from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
-AMI_ID="ami-0dfc50633aeed99d0" # ordinary-experts-patterns-zulip-2.1.0-20260720-0624
+AMI_ID="ami-05caf90bd9cbd9366" # ordinary-experts-patterns-zulip-2.1.0-20260720-0351 (dev AMI, for taskcat)
 NEXT_RELEASE_PREFIX="v210"
 
 if 'TEMPLATE_VERSION' in os.environ:
