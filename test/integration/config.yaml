@@ -6,7 +6,7 @@ application:
   name: "Zulip"
   # Zulip's home page returns 404 ("No organization found") until a realm is created.
   # We treat 200, 302, and 404 as acceptable for the home page.
-  expected_version: "12.0"
+  expected_version: "12.1"
 
 aws:
   region: "us-east-1"

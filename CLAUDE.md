@@ -57,7 +57,7 @@ Zulip-specific pieces in `zulip_stack.py`:
 
 ## Upgrade Workflow
 
-For upgrading the upstream Zulip version, follow the process in [aws-marketplace-utilities/UPGRADE.md](https://github.com/ordinaryexperts/aws-marketplace-utilities/blob/main/UPGRADE.md).
+For upgrading the upstream Zulip version, follow the process in [aws-marketplace-utilities/UPGRADE.md](https://github.com/ordinaryexperts/aws-marketplace-utilities/blob/develop/UPGRADE.md).
 
 ## Conventions
 
