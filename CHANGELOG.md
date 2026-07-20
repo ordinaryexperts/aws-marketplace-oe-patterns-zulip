@@ -1,3 +1,9 @@
+# 2.1.0
+
+* Upgrade to Zulip version 12.1
+* Bump versioned AMI parameter to `AsgAmiIdv210`
+* Fix `docker-compose.yml` not forwarding `TEST_BASE_URL`/`TEST_STACK_NAME` into the devenv container, so `test/integration` overrides documented in its README actually work
+
 # 2.0.0
 
 * Upgrade to Zulip version 12.0
