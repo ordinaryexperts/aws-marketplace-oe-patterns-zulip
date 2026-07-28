@@ -29,8 +29,8 @@ from oe_patterns_cdk_common.ses import Ses
 from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
-AMI_ID="ami-05caf90bd9cbd9366" # ordinary-experts-patterns-zulip-2.1.0-20260720-0351 (dev AMI, for taskcat)
-NEXT_RELEASE_PREFIX="v210"
+AMI_ID="ami-0dfc50633aeed99d0" # ordinary-experts-patterns-zulip-2.1.0-20260720-0624 (prod AMI, unchanged from 2.1.0 - 2.1.1 is a pattern-only patch)
+NEXT_RELEASE_PREFIX="v211"
 
 if 'TEMPLATE_VERSION' in os.environ:
     template_version = os.environ['TEMPLATE_VERSION']
