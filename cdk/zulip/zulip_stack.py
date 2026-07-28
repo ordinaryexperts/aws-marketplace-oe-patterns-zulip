@@ -29,8 +29,8 @@ from oe_patterns_cdk_common.ses import Ses
 from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
-AMI_ID="ami-0dfc50633aeed99d0" # ordinary-experts-patterns-zulip-2.1.0-20260720-0624
-NEXT_RELEASE_PREFIX="v210"
+AMI_ID="ami-00e8bed42c1880fd4" # ordinary-experts-patterns-zulip-2.1.1-20260728 (same-region copy of 2.1.0 prod AMI ami-0dfc50633aeed99d0; AWS Marketplace requires a distinct AMI id per version, content is unchanged - 2.1.1 is a pattern-only patch)
+NEXT_RELEASE_PREFIX="v211"
 
 if 'TEMPLATE_VERSION' in os.environ:
     template_version = os.environ['TEMPLATE_VERSION']
@@ -217,9 +217,9 @@ class ZulipStack(Stack):
             ami_id_param_name_suffix=NEXT_RELEASE_PREFIX,
             allow_associate_address = True,
             create_and_update_timeout_minutes = 30,
-            default_instance_type = 't3.medium',
+            default_instance_type = 't3.large',
             excluded_instance_families = ['t2'],
-            excluded_instance_sizes = ['nano', 'micro', 'small'],
+            excluded_instance_sizes = ['nano', 'micro', 'small', 'medium'],
             secret_arns=[db_secret.secret_arn(), ses.secret_arn(), secret.secret_arn()],
             use_graviton = False,
             user_data_contents=user_data,

@@ -1,3 +1,8 @@
+# 2.1.1
+
+* Bump default/minimum `AsgInstanceType` from `t3.medium` to `t3.large`; `t3.medium` reliably OOM-crash-loops under Zulip's worker processes (uwsgi, Tornado, ~15 queue workers), so `medium` is now excluded alongside `nano`/`micro`/`small`
+* Bump versioned AMI parameter to `AsgAmiIdv211` (AMI unchanged from 2.1.0)
+
 # 2.1.0
 
 * Upgrade to Zulip version 12.1
