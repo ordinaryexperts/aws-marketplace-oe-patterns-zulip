@@ -29,7 +29,7 @@ from oe_patterns_cdk_common.ses import Ses
 from oe_patterns_cdk_common.util import Util
 from oe_patterns_cdk_common.vpc import Vpc
 
-AMI_ID="ami-0dfc50633aeed99d0" # ordinary-experts-patterns-zulip-2.1.0-20260720-0624 (prod AMI, unchanged from 2.1.0 - 2.1.1 is a pattern-only patch)
+AMI_ID="ami-00e8bed42c1880fd4" # ordinary-experts-patterns-zulip-2.1.1-20260728 (same-region copy of 2.1.0 prod AMI ami-0dfc50633aeed99d0; AWS Marketplace requires a distinct AMI id per version, content is unchanged - 2.1.1 is a pattern-only patch)
 NEXT_RELEASE_PREFIX="v211"
 
 if 'TEMPLATE_VERSION' in os.environ:
