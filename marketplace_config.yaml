@@ -66,7 +66,7 @@ delivery_option:
     - Route 53 hosted zone for DNS
     - ACM certificate with a SAN covering the base hostname AND its wildcard
       subdomain (Zulip uses subdomains for realms)
-  architecture_diagram_url: "https://ordinary-experts-aws-marketplace-pattern-artifacts.s3.amazonaws.com/zulip/2.1.0/diagram.png"
+  architecture_diagram_url: "https://ordinary-experts-aws-marketplace-pattern-artifacts.s3.amazonaws.com/zulip/2.1.1/diagram.png"
 
 # Rebrand metadata — consumed by scripts/marketplace_rebrand.py in utilities 1.9.4+
 product_info:
